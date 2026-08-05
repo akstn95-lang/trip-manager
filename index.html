@@ -66,23 +66,29 @@
     <div id="app" class="w-full max-w-md h-screen md:h-[92vh] md:max-h-[850px] md:rounded-3xl bg-slate-50 shadow-2xl flex flex-col overflow-hidden relative border border-slate-200">
         
         <!-- Header -->
-        <header class="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-4 py-3 flex items-center justify-between shadow-md z-10">
-            <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-plane-departure text-xl text-yellow-300 me-1"></i>
-                <div class="leading-tight">
+        <header class="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-3 py-2.5 flex items-center justify-between shadow-md z-10">
+            <div class="flex items-center space-x-2 overflow-hidden">
+                <i class="fa-solid fa-plane-departure text-lg text-yellow-300 shrink-0"></i>
+                <div class="leading-tight truncate">
                     <div class="flex items-center space-x-1.5">
-                        <h1 class="font-bold text-base tracking-tight" id="headerTripTitle">여행 선택 필요</h1>
-                        <span class="text-[10px] bg-indigo-500/80 text-yellow-300 font-bold px-1.5 py-0.5 rounded tracking-wide border border-indigo-400/30">v1.1</span>
+                        <h1 class="font-bold text-sm tracking-tight truncate" id="headerTripTitle">여행 선택 필요</h1>
+                        <span class="text-[9px] bg-indigo-500/80 text-yellow-300 font-bold px-1.5 py-0.5 rounded tracking-wide border border-indigo-400/30 shrink-0">v1.1</span>
                     </div>
-                    <p class="text-xs text-indigo-200" id="headerTripDates">날짜를 설정해주세요</p>
+                    <p class="text-[11px] text-indigo-200 truncate" id="headerTripDates">날짜를 설정해주세요</p>
                 </div>
             </div>
-            <div class="flex items-center space-x-1.5">
-                <button onclick="loadFromGoogleSheets()" id="btnHeaderCloudSync" title="구글 시트에서 관리자 최신 일정 불러오기" class="bg-emerald-500/90 hover:bg-emerald-600 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 border border-emerald-400/40 transition shadow-xs hidden">
-                    <i class="fa-solid fa-cloud-arrow-down text-xs"></i>
-                    <span class="font-medium text-[11px]">동기화</span>
+            
+            <div class="flex items-center space-x-1 shrink-0">
+                <!-- Admin/User Mode Toggle Button -->
+                <button onclick="toggleAdminMode()" id="btnHeaderMode" class="bg-white/15 hover:bg-white/25 text-white text-[11px] px-2 py-1.5 rounded-lg flex items-center space-x-1 border border-white/20 transition">
+                    <i class="fa-solid fa-user-gear text-amber-300" id="headerModeIcon"></i>
+                    <span class="font-medium" id="headerModeText">사용자</span>
                 </button>
-                <button onclick="openTripSelectModal()" class="bg-indigo-800/60 hover:bg-indigo-800 text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 border border-indigo-400/30 transition">
+                <button onclick="handleCloudSyncClick()" id="btnHeaderCloudSync" title="구글 시트 동기화" class="bg-emerald-500/90 hover:bg-emerald-600 text-white text-[11px] px-2 py-1.5 rounded-lg flex items-center space-x-1 border border-emerald-400/40 transition shadow-xs">
+                    <i class="fa-solid fa-cloud-arrow-down text-[11px]"></i>
+                    <span class="font-medium">동기화</span>
+                </button>
+                <button onclick="openTripSelectModal()" class="bg-indigo-800/60 hover:bg-indigo-800 text-[11px] px-2 py-1.5 rounded-lg flex items-center space-x-1 border border-indigo-400/30 transition">
                     <i class="fa-solid fa-route"></i>
                     <span class="font-medium">목록</span>
                 </button>
@@ -94,20 +100,29 @@
             
             <!-- TAB 1: 일정 & 준비물 -->
             <section id="tab-schedule" class="p-4 space-y-4">
-                <!-- Cloud Sync Banner for Users -->
-                <div id="cloudSyncBanner" class="hidden bg-emerald-50/90 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between shadow-xs">
+                <!-- Mode Status Alert Box -->
+                <div id="modeStatusBanner" class="bg-indigo-50 border border-indigo-200 rounded-2xl p-2.5 flex items-center justify-between text-xs">
+                    <div class="flex items-center space-x-2">
+                        <span id="modeStatusBadge" class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold text-[10px]">사용자 모드</span>
+                        <span class="text-slate-600 text-[11px]" id="modeStatusDesc">일정 조회 및 구글 시트 최신 불러오기가 가능합니다.</span>
+                    </div>
+                    <button onclick="toggleAdminMode()" class="text-indigo-600 hover:underline font-bold text-[11px] shrink-0 ml-1" id="modeStatusBtn">관리자 전환</button>
+                </div>
+
+                <!-- Cloud Sync Banner -->
+                <div id="cloudSyncBanner" class="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between shadow-xs">
                     <div class="flex items-center space-x-2.5">
                         <div class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
                             <i class="fa-solid fa-cloud-arrow-down text-sm"></i>
                         </div>
                         <div class="leading-tight">
-                            <p class="font-bold text-emerald-900 text-xs">관리자 시트 연동됨</p>
-                            <p class="text-[11px] text-emerald-700">관리자가 변경한 최신 일정을 불러옵니다.</p>
+                            <p class="font-bold text-emerald-900 text-xs" id="cloudSyncBannerTitle">관리자 시트 연동됨</p>
+                            <p class="text-[11px] text-emerald-700" id="cloudSyncBannerDesc">구글 시트에 저장된 최신 일정을 불러옵니다.</p>
                         </div>
                     </div>
-                    <button onclick="loadFromGoogleSheets()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-xl font-medium shadow-xs transition flex items-center space-x-1 shrink-0">
+                    <button onclick="handleCloudSyncClick()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-xl font-medium shadow-xs transition flex items-center space-x-1 shrink-0">
                         <i class="fa-solid fa-rotate text-[11px]"></i>
-                        <span>최신 불러오기</span>
+                        <span id="cloudSyncBannerBtnText">최신 불러오기</span>
                     </button>
                 </div>
 
@@ -119,7 +134,7 @@
                     <h2 class="font-bold text-slate-800 flex items-center text-sm">
                         <i class="fa-regular fa-clock text-indigo-600 mr-2"></i>상세 일정
                     </h2>
-                    <button onclick="openAddItineraryModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded-full shadow flex items-center space-x-1 transition">
+                    <button onclick="checkAdminAction(openAddItineraryModal)" id="btnAddItinerary" class="admin-only bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded-full shadow flex items-center space-x-1 transition">
                         <i class="fa-solid fa-plus"></i>
                         <span>일정 추가</span>
                     </button>
@@ -134,7 +149,7 @@
                         <h2 class="font-bold text-slate-800 flex items-center text-sm">
                             <i class="fa-solid fa-list-check text-indigo-600 mr-2"></i>준비물 체크리스트
                         </h2>
-                        <button onclick="openAddChecklistModal()" class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold">
+                        <button onclick="checkAdminAction(openAddChecklistModal)" class="admin-only text-indigo-600 hover:text-indigo-800 text-xs font-semibold">
                             + 항목 추가
                         </button>
                     </div>
@@ -153,7 +168,7 @@
                             <span class="text-xs text-indigo-200 font-medium">총 예산 잔액</span>
                             <h3 class="text-2xl font-bold mt-0.5" id="budgetRemainingDisplay">₩ 0</h3>
                         </div>
-                        <button onclick="openSetBudgetModal()" class="bg-white/20 hover:bg-white/30 text-xs px-2.5 py-1 rounded-full backdrop-blur-md transition">
+                        <button onclick="checkAdminAction(openSetBudgetModal)" class="admin-only bg-white/20 hover:bg-white/30 text-xs px-2.5 py-1 rounded-full backdrop-blur-md transition">
                             예산 수정
                         </button>
                     </div>
@@ -174,7 +189,7 @@
                     <h2 class="font-bold text-slate-800 flex items-center text-sm">
                         <i class="fa-solid fa-receipt text-indigo-600 mr-2"></i>지출 내역
                     </h2>
-                    <button onclick="openAddExpenseModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded-full shadow flex items-center space-x-1 transition">
+                    <button onclick="checkAdminAction(openAddExpenseModal)" class="admin-only bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded-full shadow flex items-center space-x-1 transition">
                         <i class="fa-solid fa-plus"></i>
                         <span>지출 추가</span>
                     </button>
@@ -210,11 +225,11 @@
                             </div>
                         </div>
                         <div class="flex space-x-1.5">
-                            <button onclick="openExcelImportModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm">
+                            <button onclick="checkAdminAction(openExcelImportModal)" class="admin-only bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm">
                                 <i class="fa-solid fa-file-excel"></i>
-                                <span>엑셀 일괄입력</span>
+                                <span>엑셀 입력</span>
                             </button>
-                            <button onclick="openAddStudentModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm">
+                            <button onclick="checkAdminAction(openAddStudentModal)" class="admin-only bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm">
                                 <i class="fa-solid fa-user-plus"></i>
                                 <span>학생 추가</span>
                             </button>
@@ -243,7 +258,7 @@
                         <h2 class="font-bold text-amber-900 text-sm flex items-center">
                             <i class="fa-solid fa-shield-halved text-amber-600 mr-2"></i>여행 안심 유의사항
                         </h2>
-                        <button onclick="openEditNoticeModal()" class="text-xs text-amber-700 hover:underline">수정</button>
+                        <button onclick="checkAdminAction(openEditNoticeModal)" class="admin-only text-xs text-amber-700 hover:underline">수정</button>
                     </div>
                     <div class="text-xs text-amber-800 whitespace-pre-line leading-relaxed" id="noticeTextDisplay"></div>
                 </div>
@@ -285,12 +300,55 @@
 
             <!-- TAB 5: 앱 공유 / 백업 / PWA / 설정 -->
             <section id="tab-settings" class="p-4 space-y-4 hidden">
+                <!-- Mode Switch Card -->
+                <div class="bg-gradient-to-r from-indigo-900 to-indigo-800 text-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                    <div class="space-y-0.5">
+                        <span class="text-[10px] bg-indigo-700/80 text-yellow-300 font-bold px-2 py-0.5 rounded">권한 관리</span>
+                        <h3 class="font-bold text-sm" id="settingsModeTitle">현재: 사용자 모드</h3>
+                        <p class="text-[11px] text-indigo-200" id="settingsModeSub">일정 편집은 관리자 모드 전환이 필요합니다.</p>
+                    </div>
+                    <button onclick="toggleAdminMode()" id="settingsModeBtn" class="bg-yellow-400 hover:bg-yellow-300 text-indigo-950 text-xs px-3.5 py-2 rounded-xl font-bold shadow-md transition">
+                        관리자 전환
+                    </button>
+                </div>
+
+                <!-- Google Sheets Cloud Sync -->
+                <div class="bg-white rounded-2xl p-4 border border-emerald-200/80 shadow-sm space-y-3 relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-slate-800 text-sm flex items-center">
+                            <i class="fa-solid fa-table-cells text-emerald-600 mr-2"></i>구글 시트 실시간 연동 및 동기화
+                        </h2>
+                        <button onclick="openGoogleSheetsGuideModal()" class="text-[11px] text-emerald-700 hover:underline flex items-center">
+                            <i class="fa-solid fa-circle-question mr-1"></i>설정 가이드
+                        </button>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        구글 스프레드시트에 여행 데이터를 온라인으로 안전하게 보관하고 불러올 수 있습니다.
+                    </p>
+                    <div class="space-y-2 pt-1">
+                        <div>
+                            <label class="block text-slate-600 text-[11px] mb-1 font-medium">연동된 구글 앱스 스크립트 Web App URL</label>
+                            <input type="text" id="googleSheetsUrlInput" onchange="saveGoogleSheetsUrl()" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-slate-200 rounded-xl p-2 text-xs focus:ring-2 focus:ring-emerald-500 outline-none font-mono bg-slate-50">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            <button onclick="checkAdminAction(saveToGoogleSheets)" id="btnSaveToSheets" class="admin-only bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1 shadow-sm">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <span>구글 시트로 저장</span>
+                            </button>
+                            <button onclick="loadFromGoogleSheets()" id="btnLoadFromSheets" class="bg-emerald-50 border border-emerald-300 text-emerald-800 hover:bg-emerald-100 text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-cloud-arrow-down"></i>
+                                <span>최신 불러오기</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 text-center">
                     <h2 class="font-bold text-slate-800 text-sm flex items-center justify-center">
                         <i class="fa-solid fa-qrcode text-indigo-600 mr-2"></i>앱 전달 및 데이터 공유 (QR 코드)
                     </h2>
                     <p class="text-xs text-slate-500 leading-relaxed">
-                        최신 수정된 여행 데이터가 내장된 QR 코드가 생성됩니다.<br>상대방이 스캔하면 수정된 일정을 바로 불러올 수 있습니다.
+                        최신 여행 데이터와 구글 시트 연동 정보가 내장된 QR 코드가 생성됩니다.<br>스캔하면 동일한 일정을 그대로 불러올 수 있습니다.
                     </p>
                     <div class="flex justify-center items-center min-h-[160px] py-2">
                         <div id="qrcode" class="p-2.5 bg-white border border-slate-200 rounded-xl shadow-xs min-w-[160px] min-h-[160px] flex items-center justify-center"></div>
@@ -311,7 +369,7 @@
                     <h2 class="font-bold text-slate-800 text-sm flex items-center">
                         <i class="fa-solid fa-database text-indigo-600 mr-2"></i>데이터 백업 및 복원 (JSON)
                     </h2>
-                    <p class="text-xs text-slate-500">여행 일정, 예산, 출석부 전체 데이터를 백업하고 파일로 백업할 수 있습니다.</p>
+                    <p class="text-xs text-slate-500">여행 일정, 예산, 출석부 전체 데이터를 백업하고 파일로 보관할 수 있습니다.</p>
                     <div class="grid grid-cols-2 gap-2 pt-1">
                         <button onclick="exportDataJSON()" class="bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1">
                             <i class="fa-solid fa-download"></i>
@@ -320,49 +378,18 @@
                         <label class="bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1 cursor-pointer">
                             <i class="fa-solid fa-upload"></i>
                             <span>JSON 불러오기</span>
-                            <input type="file" id="importJsonFileInput" accept=".json" onchange="importDataJSON(event)" class="hidden">
+                            <input type="file" id="importJsonFileInput" accept=".json" onchange="checkAdminAction(() => importDataJSON(event))" class="hidden">
                         </label>
-                    </div>
-                </div>
-
-                <!-- Google Sheets Cloud Sync -->
-                <div class="bg-white rounded-2xl p-4 border border-emerald-200/80 shadow-sm space-y-3 relative overflow-hidden">
-                    <div class="flex items-center justify-between">
-                        <h2 class="font-bold text-slate-800 text-sm flex items-center">
-                            <i class="fa-solid fa-table-cells text-emerald-600 mr-2"></i>구글 시트 실시간 연동 및 동기화
-                        </h2>
-                        <button onclick="openGoogleSheetsGuideModal()" class="text-[11px] text-emerald-700 hover:underline flex items-center">
-                            <i class="fa-solid fa-circle-question mr-1"></i>설정 가이드
-                        </button>
-                    </div>
-                    <p class="text-xs text-slate-500 leading-relaxed">
-                        구글 스프레드시트에 여행 데이터를 온라인으로 안전하게 보관하고 다른 기기에서 불러올 수 있습니다.
-                    </p>
-                    <div class="space-y-2 pt-1">
-                        <div>
-                            <label class="block text-slate-600 text-[11px] mb-1 font-medium">구글 앱스 스크립트(Web App) URL</label>
-                            <input type="text" id="googleSheetsUrlInput" onchange="saveGoogleSheetsUrl()" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-slate-200 rounded-xl p-2 text-xs focus:ring-2 focus:ring-emerald-500 outline-none font-mono">
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 pt-1">
-                            <button onclick="saveToGoogleSheets()" id="btnSaveToSheets" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1 shadow-sm">
-                                <i class="fa-solid fa-cloud-arrow-up"></i>
-                                <span>구글 시트로 저장</span>
-                            </button>
-                            <button onclick="loadFromGoogleSheets()" id="btnLoadFromSheets" class="bg-emerald-50 border border-emerald-300 text-emerald-800 hover:bg-emerald-100 text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1">
-                                <i class="fa-solid fa-cloud-arrow-down"></i>
-                                <span>구글 시트에서 불러오기</span>
-                            </button>
-                        </div>
                     </div>
                 </div>
 
                 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                     <h2 class="font-bold text-slate-800 text-sm flex items-center">
-                        <i class="fa-solid fa-user-shield text-indigo-600 mr-2"></i>출석부 비밀번호 변경
+                        <i class="fa-solid fa-user-shield text-indigo-600 mr-2"></i>관리자 비밀번호 변경
                     </h2>
-                    <button onclick="openChangePasswordModal()" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1.5">
+                    <button onclick="checkAdminAction(openChangePasswordModal)" class="admin-only w-full bg-slate-800 hover:bg-slate-900 text-white text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1.5">
                         <i class="fa-solid fa-key"></i>
-                        <span>비밀번호 변경하기</span>
+                        <span>관리자 비밀번호 변경</span>
                     </button>
                 </div>
 
@@ -410,7 +437,7 @@
                     <button onclick="closeModal()" class="text-slate-400 text-lg hover:text-slate-600">&times;</button>
                 </div>
                 <div id="tripListContainer" class="space-y-2 max-h-60 overflow-y-auto"></div>
-                <button onclick="openNewTripForm()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1">
+                <button onclick="checkAdminAction(openNewTripForm)" class="admin-only w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1">
                     <i class="fa-solid fa-plus"></i>
                     <span>새 여행 만들기</span>
                 </button>
@@ -563,7 +590,7 @@
                     <i class="fa-solid fa-lock" id="pinModalIcon"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold text-slate-800 text-sm" id="pinModalTitle">출석부 암호 입력</h3>
+                    <h3 class="font-bold text-slate-800 text-sm" id="pinModalTitle">비밀번호 입력</h3>
                     <p class="text-xs text-slate-500 mt-0.5" id="pinModalSub">설정된 암호를 입력해주세요.</p>
                 </div>
                 <div>
@@ -643,7 +670,7 @@
                 <div class="space-y-2 text-xs">
                     <div>
                         <label class="block text-slate-600 mb-1">새 비밀번호</label>
-                        <input type="password" id="newPinInput" placeholder="새 비밀번호" class="w-full border border-slate-200 rounded-lg p-2 outline-none">
+                        <input type="password" id="newPinInput" placeholder="새 비밀번호 입력" class="w-full border border-slate-200 rounded-lg p-2 outline-none">
                     </div>
                 </div>
                 <div class="flex space-x-2 pt-2">
@@ -682,53 +709,63 @@
                 </div>
             </div>
 
-            <!-- Modal 12: Google Sheets Setup Guide Modal -->
+            <!-- Modal 12: Google Sheets Guide Modal -->
             <div id="modalGoogleSheetsGuide" class="bg-white rounded-2xl w-full max-w-md p-4 space-y-3 shadow-2xl hidden max-h-[85vh] overflow-y-auto">
                 <div class="flex justify-between items-center border-b border-slate-100 pb-2">
                     <h3 class="font-bold text-slate-800 text-sm flex items-center text-emerald-700">
-                        <i class="fa-solid fa-table-cells mr-2"></i>구글 시트 연동 설정 3단계 가이드
+                        <i class="fa-solid fa-file-excel mr-2"></i>구글 시트 연동 설정 가이드
                     </h3>
                     <button onclick="closeModal()" class="text-slate-400 text-lg hover:text-slate-600">&times;</button>
                 </div>
                 <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
-                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                        <p class="font-bold text-slate-800 mb-1">1단계: 구글 스프레드시트 생성</p>
-                        <p>내 구글 드라이브에서 새 스프레드시트를 만들고 상단 메뉴의 <strong class="text-emerald-700">[확장 프로그램] ➔ [Apps Script]</strong>를 클릭하세요.</p>
-                    </div>
-
-                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
-                        <div class="flex justify-between items-center">
-                            <p class="font-bold text-slate-800">2단계: 스크립트 붙여넣기</p>
-                            <button onclick="copyAppsScriptCode()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-2 py-0.5 rounded font-medium">코드 복사</button>
-                        </div>
-                        <p>열린 스크립트 편집기 창의 기존 내용을 지우고 아래 코드를 그대로 복사하여 붙여넣은 뒤 저장(Ctrl+S)하세요.</p>
-                        <pre class="bg-slate-800 text-slate-100 p-2 rounded-lg text-[10px] font-mono overflow-x-auto select-all" id="appsScriptCodeBlock">
-function doGet(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("TripData") || SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var data = sheet.getRange("A1").getValue();
-  return ContentService.createTextOutput(data || "{}").setMimeType(ContentService.MimeType.JSON);
+                    <p>기본 제공 연동 URL 외에 나만의 구글 시트를 연동하려면 다음 절차를 진행하세요:</p>
+                    <ol class="list-decimal pl-4 space-y-1">
+                        <li>구글 드라이브에서 <strong>새 구글 스프레드시트</strong>를 생성합니다.</li>
+                        <li>상단 메뉴 <strong>[확장 프로그램] &gt; [Apps Script]</strong>를 클릭합니다.</li>
+                        <li>아래 스크립트 코드를 붙여넣고 저장한 뒤 <strong>[배포] &gt; [새 배포]</strong>를 선택합니다.</li>
+                        <li>유형: <strong>웹 앱</strong> / 액세스 권한: <strong>모든 사용자(Anyone)</strong>로 설정 후 배포합니다.</li>
+                        <li>발급된 <strong>웹 앱 URL</strong>을 복사하여 아래 URL 입력 칸에 저장합니다.</li>
+                    </ol>
+                    <div class="relative bg-slate-900 text-emerald-400 font-mono text-[10px] p-2.5 rounded-xl overflow-x-auto">
+                        <button onclick="copyAppsScriptCode()" class="absolute top-2 right-2 bg-slate-700 hover:bg-slate-600 text-white text-[10px] px-2 py-0.5 rounded">복사</button>
+                        <pre id="appsScriptCodeBlock">function doGet(e) {
+  var sp = PropertiesService.getScriptProperties();
+  var data = sp.getProperty('TRIP_DATA');
+  return ContentService.createTextOutput(data || '{}')
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function doPost(e) {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("TripData");
-  if (!sheet) {
-    sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet("TripData");
-  }
-  var json = e.postData.contents;
-  sheet.getRange("A1").setValue(json);
-  sheet.getRange("A2").setValue("마지막 업데이트: " + new Date().toLocaleString());
-  return ContentService.createTextOutput(JSON.stringify({status: "success"}))
+  var body = e.postData.contents;
+  PropertiesService.getScriptProperties().setProperty('TRIP_DATA', body);
+  return ContentService.createTextOutput(JSON.stringify({status: 'ok'}))
     .setMimeType(ContentService.MimeType.JSON);
 }</pre>
                     </div>
+                </div>
+                <div class="pt-2">
+                    <button onclick="closeModal()" class="w-full bg-slate-800 text-white text-xs py-2 rounded-xl font-medium">닫기</button>
+                </div>
+            </div>
 
-                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                        <p class="font-bold text-slate-800 mb-1">3단계: 웹 앱 배포 및 URL 입력</p>
-                        <p>우측 상단 <strong class="text-indigo-600">[배포] ➔ [새 배포]</strong> 클릭 ➔ 유형: <strong class="text-slate-800">웹 앱</strong> ➔ 액세스 권한: <strong class="text-rose-600 font-bold">모든 사용자(Anyone)</strong> 설정 후 배포 완료 시 생성되는 <strong class="text-emerald-700 font-mono text-[11px]">웹 앱 URL</strong>을 설정 창에 붙여넣으시면 됩니다.</p>
+            <!-- Modal 13: Quick Sheets Link Modal -->
+            <div id="modalQuickSheetsLink" class="bg-white rounded-2xl w-full max-w-sm p-4 space-y-3 shadow-2xl hidden">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center text-emerald-700">
+                        <i class="fa-solid fa-cloud-arrow-down mr-2"></i>구글 시트 연동 및 최신 불러오기
+                    </h3>
+                    <button onclick="closeModal()" class="text-slate-400 text-lg hover:text-slate-600">&times;</button>
+                </div>
+                <div class="space-y-2 text-xs text-slate-600">
+                    <p class="leading-relaxed">관리자가 공유해준 <strong>구글 앱스 스크립트 Web App URL</strong>을 입력하면 최신 일정을 즉시 불러올 수 있습니다.</p>
+                    <div>
+                        <label class="block text-slate-700 font-medium mb-1">구글 시트 URL</label>
+                        <input type="text" id="quickSheetsUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-emerald-500 font-mono">
                     </div>
                 </div>
-                <div class="pt-1">
-                    <button onclick="closeModal()" class="w-full bg-slate-800 text-white text-xs py-2 rounded-xl font-medium">닫기</button>
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 text-xs py-2 rounded-xl">취소</button>
+                    <button onclick="saveQuickSheetsUrlAndLoad()" class="flex-1 bg-emerald-600 text-white text-xs py-2 rounded-xl font-medium shadow-sm">연동 & 불러오기</button>
                 </div>
             </div>
 
@@ -747,8 +784,9 @@ function doPost(e) {
            ========================================================================== */
         const STORAGE_KEY = 'smart_trip_manager_v1';
         const APP_VERSION = 'v1.1';
+        const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwxUyMiOYjaX94eB6omoVX_fO4nzNIZOThbKHAkprJtN07i9Tmc6SyPK1r4-SuJCY4mHA/exec';
         
-        // SHA-256 Simple Hash Function for Client-Side Obfuscated Password Protection
+        // SHA-256 Simple Hash Function
         async function sha256(str) {
             const buffer = new TextEncoder().encode(str);
             const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
@@ -759,8 +797,8 @@ function doPost(e) {
         // Initial Sample Data
         const DEFAULT_DATA = {
             version: '1.1',
-            pinHash: '', // Initial password set by user on first prompt
-            googleSheetsUrl: '',
+            pinHash: '', // Admin / Attendance password hash
+            googleSheetsUrl: DEFAULT_SHEETS_URL,
             activeTripId: 'trip_default_1',
             trips: [
                 {
@@ -801,6 +839,9 @@ function doPost(e) {
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     if (parsed && Array.isArray(parsed.trips) && parsed.trips.length > 0) {
+                        if (!parsed.googleSheetsUrl || parsed.googleSheetsUrl.trim() === '') {
+                            parsed.googleSheetsUrl = DEFAULT_SHEETS_URL;
+                        }
                         return parsed;
                     }
                 }
@@ -813,7 +854,9 @@ function doPost(e) {
         let appData = loadAppData();
         let selectedDayFilter = 1;
         let isAttendanceUnlocked = false;
+        let isAdminMode = false;
         let isInitialPinMode = false;
+        let passwordPurpose = 'admin'; // 'admin' or 'attendance'
         let pendingConfirmCallback = null;
 
         function saveData() {
@@ -839,6 +882,119 @@ function doPost(e) {
         }
 
         /* ==========================================================================
+           ADMIN MODE & PERMISSIONS CONTROL
+           ========================================================================== */
+        function toggleAdminMode() {
+            if (isAdminMode) {
+                isAdminMode = false;
+                renderAppModeUI();
+                showToast("사용자 모드로 전환되었습니다.");
+            } else {
+                passwordPurpose = 'admin';
+                promptAdminPassword();
+            }
+        }
+
+        function promptAdminPassword() {
+            const input = document.getElementById('pinInput');
+            input.value = '';
+            const title = document.getElementById('pinModalTitle');
+            const sub = document.getElementById('pinModalSub');
+            const btn = document.getElementById('pinModalBtn');
+
+            if (!appData.pinHash) {
+                isInitialPinMode = true;
+                title.textContent = "관리자 비밀번호 초기 설정";
+                sub.textContent = "관리자 권한 보호를 위해 원하는 비밀번호를 설정하세요.";
+                btn.textContent = "비밀번호 저장";
+            } else {
+                isInitialPinMode = false;
+                title.textContent = "관리자 비밀번호 입력";
+                sub.textContent = "설정된 관리자 암호를 입력해주세요.";
+                btn.textContent = "관리자 인증";
+            }
+            openModal('modalPasswordPrompt');
+        }
+
+        function checkAdminAction(callback) {
+            if (isAdminMode) {
+                if (typeof callback === 'function') callback();
+            } else {
+                showToast("관리자 권한이 필요합니다. 관리자 모드로 전환하세요.", "error");
+                passwordPurpose = 'admin';
+                promptAdminPassword();
+            }
+        }
+
+        function renderAppModeUI() {
+            const modeText = document.getElementById('headerModeText');
+            const modeIcon = document.getElementById('headerModeIcon');
+            const modeBtn = document.getElementById('btnHeaderMode');
+
+            const statusBadge = document.getElementById('modeStatusBadge');
+            const statusDesc = document.getElementById('modeStatusDesc');
+            const statusBtn = document.getElementById('modeStatusBtn');
+
+            const settingsTitle = document.getElementById('settingsModeTitle');
+            const settingsSub = document.getElementById('settingsModeSub');
+            const settingsBtn = document.getElementById('settingsModeBtn');
+
+            if (isAdminMode) {
+                if (modeText) modeText.textContent = "관리자";
+                if (modeIcon) modeIcon.className = "fa-solid fa-user-shield text-amber-300";
+                if (modeBtn) modeBtn.className = "bg-amber-500/90 text-slate-900 font-bold text-[11px] px-2 py-1.5 rounded-lg flex items-center space-x-1 border border-amber-300 transition shadow-xs";
+
+                if (statusBadge) {
+                    statusBadge.textContent = "관리자 모드 🔓";
+                    statusBadge.className = "bg-amber-400 text-slate-900 px-2 py-0.5 rounded-full font-bold text-[10px]";
+                }
+                if (statusDesc) statusDesc.textContent = "모든 편집, 추가, 삭제 및 클라우드 저장 권한이 활성화되었습니다.";
+                if (statusBtn) statusBtn.textContent = "사용자 모드로 변경";
+
+                if (settingsTitle) settingsTitle.textContent = "현재: 관리자 모드 🔓";
+                if (settingsSub) settingsSub.textContent = "모든 일정 편집 및 구글 시트 저장 권한이 활성화되어 있습니다.";
+                if (settingsBtn) {
+                    settingsBtn.textContent = "사용자 전환";
+                    settingsBtn.className = "bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs px-3.5 py-2 rounded-xl font-bold shadow-md transition";
+                }
+
+                // Show Admin Elements
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    el.classList.remove('hidden');
+                });
+            } else {
+                if (modeText) modeText.textContent = "사용자";
+                if (modeIcon) modeIcon.className = "fa-solid fa-user text-indigo-200";
+                if (modeBtn) modeBtn.className = "bg-white/15 hover:bg-white/25 text-white text-[11px] px-2 py-1.5 rounded-lg flex items-center space-x-1 border border-white/20 transition";
+
+                if (statusBadge) {
+                    statusBadge.textContent = "사용자 모드";
+                    statusBadge.className = "bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold text-[10px]";
+                }
+                if (statusDesc) statusDesc.textContent = "일정 조회 및 구글 시트 최신 불러오기가 가능합니다.";
+                if (statusBtn) statusBtn.textContent = "관리자 전환";
+
+                if (settingsTitle) settingsTitle.textContent = "현재: 사용자 모드";
+                if (settingsSub) settingsSub.textContent = "일정 편집 및 클라우드 저장은 관리자 모드 전환이 필요합니다.";
+                if (settingsBtn) {
+                    settingsBtn.textContent = "관리자 전환";
+                    settingsBtn.className = "bg-yellow-400 hover:bg-yellow-300 text-indigo-950 text-xs px-3.5 py-2 rounded-xl font-bold shadow-md transition";
+                }
+
+                // Hide Admin Elements
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    el.classList.add('hidden');
+                });
+            }
+
+            // Re-render sub views to refresh action icons
+            renderItineraryList();
+            renderChecklist();
+            renderBudgetView();
+            renderAttendanceList();
+        }
+
+        /* ==========================================================================
            TAB SWITCHING & NAVIGATION
            ========================================================================== */
         function switchTab(tabName) {
@@ -858,6 +1014,7 @@ function doPost(e) {
             });
 
             if (tabName === 'attendance' && !isAttendanceUnlocked) {
+                passwordPurpose = 'attendance';
                 promptAttendancePassword();
             } else if (tabName === 'settings') {
                 generateQrCode();
@@ -878,22 +1035,26 @@ function doPost(e) {
             const hasSheetsUrl = appData.googleSheetsUrl && appData.googleSheetsUrl.trim() !== '';
 
             if (syncBtn) {
-                if (hasSheetsUrl) {
-                    syncBtn.classList.remove('hidden');
-                    syncBtn.classList.add('flex');
-                } else {
-                    syncBtn.classList.add('hidden');
-                    syncBtn.classList.remove('flex');
-                }
+                syncBtn.classList.remove('hidden');
+                syncBtn.classList.add('flex');
             }
 
             if (syncBanner) {
+                syncBanner.classList.remove('hidden');
+                syncBanner.classList.add('flex');
+
+                const titleEl = document.getElementById('cloudSyncBannerTitle');
+                const descEl = document.getElementById('cloudSyncBannerDesc');
+                const btnTextEl = document.getElementById('cloudSyncBannerBtnText');
+
                 if (hasSheetsUrl) {
-                    syncBanner.classList.remove('hidden');
-                    syncBanner.classList.add('flex');
+                    if (titleEl) titleEl.textContent = "관리자 시트 연동됨";
+                    if (descEl) descEl.textContent = "구글 시트에 저장된 최신 일정을 불러옵니다.";
+                    if (btnTextEl) btnTextEl.textContent = "최신 불러오기";
                 } else {
-                    syncBanner.classList.add('hidden');
-                    syncBanner.classList.remove('flex');
+                    if (titleEl) titleEl.textContent = "구글 시트 미연동";
+                    if (descEl) descEl.textContent = "관리자 시트 URL을 등록하여 최신 일정을 동기화하세요.";
+                    if (btnTextEl) btnTextEl.textContent = "시트 연동";
                 }
             }
         }
@@ -937,7 +1098,7 @@ function doPost(e) {
             if (dayItems.length === 0) {
                 container.innerHTML = `
                     <div class="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200 text-xs">
-                        등록된 일정이 없습니다. '+ 일정 추가'를 눌러 등록해보세요.
+                        등록된 일정이 없습니다. ${isAdminMode ? "'+ 일정 추가'를 눌러 등록해보세요." : ""}
                     </div>`;
                 return;
             }
@@ -952,10 +1113,11 @@ function doPost(e) {
                             <span class="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-md text-[11px] font-mono">${item.time}</span>
                             <h3 class="font-bold text-slate-800 text-sm">${item.title}</h3>
                         </div>
+                        ${isAdminMode ? `
                         <div class="flex items-center space-x-1">
                             <button onclick="editItineraryItem('${item.id}')" class="text-slate-400 hover:text-indigo-600 text-xs p-1"><i class="fa-solid fa-pen"></i></button>
                             <button onclick="deleteItineraryItem('${item.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
-                        </div>
+                        </div>` : ''}
                     </div>
                     ${item.location ? `
                         <div class="text-xs text-slate-500 flex items-center">
@@ -991,9 +1153,10 @@ function doPost(e) {
                         <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleChecklistItem('${item.id}')" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
                         <span class="${item.checked ? 'line-through text-slate-400' : 'text-slate-700 font-medium'}">${item.text}</span>
                     </label>
+                    ${isAdminMode ? `
                     <button onclick="deleteChecklistItem('${item.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1">
                         <i class="fa-solid fa-xmark"></i>
-                    </button>
+                    </button>` : ''}
                 `;
                 container.appendChild(div);
             });
@@ -1062,7 +1225,9 @@ function doPost(e) {
                     </div>
                     <div class="flex items-center space-x-2">
                         <span class="font-bold text-slate-800 text-sm">₩ ${(exp.amount || 0).toLocaleString()}</span>
+                        ${isAdminMode ? `
                         <button onclick="deleteExpenseItem('${exp.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                        ` : ''}
                     </div>
                 `;
                 listContainer.appendChild(item);
@@ -1073,6 +1238,7 @@ function doPost(e) {
            SECURITY & ATTENDANCE LOGIC
            ========================================================================== */
         function promptAttendancePassword() {
+            passwordPurpose = 'attendance';
             const input = document.getElementById('pinInput');
             input.value = '';
             const title = document.getElementById('pinModalTitle');
@@ -1081,7 +1247,7 @@ function doPost(e) {
 
             if (!appData.pinHash) {
                 isInitialPinMode = true;
-                title.textContent = "초기 비밀번호 설정";
+                title.textContent = "비밀번호 초기 설정";
                 sub.textContent = "출석부 보호를 위해 사용하실 비밀번호를 설정하세요.";
                 btn.textContent = "비밀번호 저장";
             } else {
@@ -1104,20 +1270,32 @@ function doPost(e) {
                 appData.pinHash = await sha256(val);
                 saveData();
                 closeModal();
-                isAttendanceUnlocked = true;
-                document.getElementById('attendanceLockedView').classList.add('hidden');
-                document.getElementById('attendanceUnlockedView').classList.remove('hidden');
-                renderAttendanceList();
-                showToast("초기 비밀번호가 설정되었습니다.", "check");
-            } else {
-                const inputHash = await sha256(val);
-                if (inputHash === appData.pinHash) {
-                    closeModal();
+                if (passwordPurpose === 'admin') {
+                    isAdminMode = true;
+                    renderAppModeUI();
+                    showToast("관리자 비밀번호 설정 및 관리자 모드 활성화 완료!", "check");
+                } else {
                     isAttendanceUnlocked = true;
                     document.getElementById('attendanceLockedView').classList.add('hidden');
                     document.getElementById('attendanceUnlockedView').classList.remove('hidden');
                     renderAttendanceList();
-                    showToast("출석부가 해제되었습니다.", "check");
+                    showToast("초기 비밀번호가 설정되었습니다.", "check");
+                }
+            } else {
+                const inputHash = await sha256(val);
+                if (inputHash === appData.pinHash) {
+                    closeModal();
+                    if (passwordPurpose === 'admin') {
+                        isAdminMode = true;
+                        renderAppModeUI();
+                        showToast("관리자 모드로 전환되었습니다.", "check");
+                    } else {
+                        isAttendanceUnlocked = true;
+                        document.getElementById('attendanceLockedView').classList.add('hidden');
+                        document.getElementById('attendanceUnlockedView').classList.remove('hidden');
+                        renderAttendanceList();
+                        showToast("출석부가 해제되었습니다.", "check");
+                    }
                 } else {
                     showToast("비밀번호가 올바르지 않습니다.", "error");
                 }
@@ -1167,10 +1345,11 @@ function doPost(e) {
                                 <h4 class="font-bold text-slate-800 text-sm leading-tight">${std.name}</h4>
                             </div>
                         </div>
+                        ${isAdminMode ? `
                         <div class="flex items-center space-x-1.5">
                             <button onclick="editStudentItem('${std.id}')" class="text-slate-400 hover:text-slate-600 text-xs p-1"><i class="fa-solid fa-pen"></i></button>
                             <button onclick="deleteStudentItem('${std.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
-                        </div>
+                        </div>` : ''}
                     </div>
 
                     <div class="grid grid-cols-3 gap-1.5 pt-1 text-[11px]">
@@ -1298,7 +1477,7 @@ function doPost(e) {
                         <p class="font-bold text-slate-800 text-xs">${t.title}</p>
                         <p class="text-[11px] text-slate-400">${t.startDate} ~ ${t.endDate}</p>
                     </div>
-                    ${appData.trips.length > 1 ? `
+                    ${(appData.trips.length > 1 && isAdminMode) ? `
                         <button onclick="event.stopPropagation(); deleteTrip('${t.id}')" class="text-rose-400 hover:text-rose-600 text-xs p-1">
                             <i class="fa-solid fa-trash"></i>
                         </button>
@@ -1644,7 +1823,7 @@ function doPost(e) {
                     expenses: data.expenses || [],
                     notice: data.notice || '',
                     journal: data.journal || '',
-                    googleSheetsUrl: appData.googleSheetsUrl || ''
+                    googleSheetsUrl: appData.googleSheetsUrl || DEFAULT_SHEETS_URL
                 };
                 const jsonStr = JSON.stringify(shareable);
                 return btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
@@ -1824,15 +2003,43 @@ function doPost(e) {
             appData.pinHash = await sha256(pin);
             saveData();
             closeModal();
-            showToast("출석부 비밀번호가 변경되었습니다.", "check");
+            showToast("관리자 비밀번호가 변경되었습니다.", "check");
         }
 
         /* ==========================================================================
            GOOGLE SHEETS SYNC (APPS SCRIPT INTEGRATION)
            ========================================================================== */
+        function handleCloudSyncClick() {
+            const hasSheetsUrl = appData.googleSheetsUrl && appData.googleSheetsUrl.trim() !== '';
+            if (hasSheetsUrl) {
+                loadFromGoogleSheets();
+            } else {
+                openQuickSheetsLinkModal();
+            }
+        }
+
+        function openQuickSheetsLinkModal() {
+            const input = document.getElementById('quickSheetsUrlInput');
+            if (input) input.value = appData.googleSheetsUrl || DEFAULT_SHEETS_URL;
+            openModal('modalQuickSheetsLink');
+        }
+
+        function saveQuickSheetsUrlAndLoad() {
+            const url = document.getElementById('quickSheetsUrlInput').value.trim();
+            if (!url) {
+                showToast("구글 시트 Web App URL을 입력해주세요.", "error");
+                return;
+            }
+            appData.googleSheetsUrl = url;
+            saveData();
+            renderHeader();
+            closeModal();
+            loadFromGoogleSheets();
+        }
+
         function saveGoogleSheetsUrl() {
             const url = document.getElementById('googleSheetsUrlInput').value.trim();
-            appData.googleSheetsUrl = url;
+            appData.googleSheetsUrl = url || DEFAULT_SHEETS_URL;
             saveData();
             renderHeader();
         }
@@ -1859,7 +2066,7 @@ function doPost(e) {
         }
 
         async function saveToGoogleSheets() {
-            const url = document.getElementById('googleSheetsUrlInput').value.trim() || appData.googleSheetsUrl;
+            const url = document.getElementById('googleSheetsUrlInput').value.trim() || appData.googleSheetsUrl || DEFAULT_SHEETS_URL;
             if (!url) {
                 showToast("구글 앱스 스크립트 URL을 입력해주세요.", "error");
                 openGoogleSheetsGuideModal();
@@ -1867,9 +2074,11 @@ function doPost(e) {
             }
 
             const btn = document.getElementById('btnSaveToSheets');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i><span>저장 중...</span>`;
-            btn.disabled = true;
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i><span>저장 중...</span>`;
+                btn.disabled = true;
+            }
 
             try {
                 const response = await fetch(url, {
@@ -1879,23 +2088,25 @@ function doPost(e) {
                 });
 
                 if (response.ok) {
-                    showToast("구글 시트에 성공적으로 데이터가 백업되었습니다.", "check");
+                    showToast("구글 시트에 성공적으로 데이터가 저장되었습니다.", "check");
                 } else {
-                    showToast("구글 시트 저장 완료 (서버 반환 확인).", "check");
+                    showToast("구글 시트 저장 전송 완료.", "check");
                 }
             } catch (err) {
                 console.error("Google Sheets save notice:", err);
                 showToast("구글 시트로 저장 명령을 전송했습니다.", "check");
             } finally {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
             }
         }
 
         async function loadFromGoogleSheets() {
-            const url = document.getElementById('googleSheetsUrlInput')?.value.trim() || appData.googleSheetsUrl;
+            const url = document.getElementById('googleSheetsUrlInput')?.value.trim() || appData.googleSheetsUrl || DEFAULT_SHEETS_URL;
             if (!url) {
-                showToast("연동된 구글 시트 URL이 없습니다. [공유/설정] 탭에서 URL을 설정해주세요.", "error");
+                showToast("연동된 구글 시트 URL이 없습니다.", "error");
                 switchTab('settings');
                 openGoogleSheetsGuideModal();
                 return;
@@ -1916,17 +2127,20 @@ function doPost(e) {
                 const imported = await response.json();
                 if (imported && imported.trips && Array.isArray(imported.trips)) {
                     showConfirmModal("구글 시트에서 관리자가 수정한 최신 데이터를 불러와 앱 데이터를 교체하시겠습니까?", function() {
+                        const currentPin = appData.pinHash;
                         appData = imported;
+                        if (!appData.pinHash && currentPin) appData.pinHash = currentPin;
+                        if (!appData.googleSheetsUrl) appData.googleSheetsUrl = url;
                         saveData();
                         initApp();
-                        showToast("구글 시트에서 최신 데이터를 불러왔습니다.", "check");
+                        showToast("구글 시트에서 최신 데이터를 성공적으로 불러왔습니다.", "check");
                     });
                 } else {
                     showToast("구글 시트에 유효한 여행 데이터가 없습니다.", "error");
                 }
             } catch (err) {
                 console.error("Google Sheets load error:", err);
-                showToast("구글 시트 데이터를 불러오지 못했습니다. URL 및 네트워크 상태를 확인해주세요.", "error");
+                showToast("구글 시트 데이터를 불러오지 못했습니다. 네트워크 상태를 확인해주세요.", "error");
             } finally {
                 if (btn) {
                     btn.innerHTML = originalHtml;
@@ -2015,11 +2229,14 @@ function doPost(e) {
            INITIALIZATION
            ========================================================================== */
         function initApp() {
-            if (appData.googleSheetsUrl) {
-                const input = document.getElementById('googleSheetsUrlInput');
-                if (input) input.value = appData.googleSheetsUrl;
+            if (!appData.googleSheetsUrl) {
+                appData.googleSheetsUrl = DEFAULT_SHEETS_URL;
             }
+            const input = document.getElementById('googleSheetsUrlInput');
+            if (input) input.value = appData.googleSheetsUrl;
+
             renderHeader();
+            renderAppModeUI();
             renderDayFilterList();
             renderItineraryList();
             renderChecklist();
