@@ -348,19 +348,15 @@
                         <i class="fa-solid fa-qrcode text-indigo-600 mr-2"></i>앱 전달 및 데이터 공유 (QR 코드)
                     </h2>
                     <p class="text-xs text-slate-500 leading-relaxed">
-                        최신 여행 데이터와 구글 시트 연동 정보가 내장된 QR 코드가 생성됩니다.<br>스캔하면 동일한 일정을 그대로 불러올 수 있습니다.
+                        스마트 트립 매니저 앱 주소(URL)로 연결되는 QR 코드입니다.<br>스캔하면 모바일 브라우저에서 웹 앱을 바로 열 수 있습니다.
                     </p>
                     <div class="flex justify-center items-center min-h-[160px] py-2">
                         <div id="qrcode" class="p-2.5 bg-white border border-slate-200 rounded-xl shadow-xs min-w-[160px] min-h-[160px] flex items-center justify-center"></div>
                     </div>
-                    <div class="grid grid-cols-2 gap-2 pt-1">
-                        <button onclick="generateQrCode(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1">
-                            <i class="fa-solid fa-arrows-rotate"></i>
-                            <span>QR 코드 갱신</span>
-                        </button>
-                        <button onclick="copyAppUrl()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-xl border border-slate-300 font-medium transition flex items-center justify-center space-x-1">
+                    <div class="pt-1">
+                        <button onclick="copyAppUrl()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-2.5 rounded-xl font-medium transition flex items-center justify-center space-x-1 shadow-sm">
                             <i class="fa-regular fa-copy"></i>
-                            <span>공유 URL 복사</span>
+                            <span>앱 공유 URL 복사</span>
                         </button>
                     </div>
                 </div>
@@ -887,6 +883,13 @@ function doPost(e) {
         function toggleAdminMode() {
             if (isAdminMode) {
                 isAdminMode = false;
+                // 사용자 모드로 전환 시 출석부 잠금 상태로 리셋
+                isAttendanceUnlocked = false;
+                const lockedView = document.getElementById('attendanceLockedView');
+                const unlockedView = document.getElementById('attendanceUnlockedView');
+                if (lockedView) lockedView.classList.remove('hidden');
+                if (unlockedView) unlockedView.classList.add('hidden');
+                
                 renderAppModeUI();
                 showToast("사용자 모드로 전환되었습니다.");
             } else {
@@ -940,6 +943,13 @@ function doPost(e) {
             const settingsBtn = document.getElementById('settingsModeBtn');
 
             if (isAdminMode) {
+                // 관리자 모드인 경우 출석부를 자동으로 해제 상태로 설정
+                isAttendanceUnlocked = true;
+                const lockedView = document.getElementById('attendanceLockedView');
+                const unlockedView = document.getElementById('attendanceUnlockedView');
+                if (lockedView) lockedView.classList.add('hidden');
+                if (unlockedView) unlockedView.classList.remove('hidden');
+
                 if (modeText) modeText.textContent = "관리자";
                 if (modeIcon) modeIcon.className = "fa-solid fa-user-shield text-amber-300";
                 if (modeBtn) modeBtn.className = "bg-amber-500/90 text-slate-900 font-bold text-[11px] px-2 py-1.5 rounded-lg flex items-center space-x-1 border border-amber-300 transition shadow-xs";
@@ -1013,9 +1023,20 @@ function doPost(e) {
                 }
             });
 
-            if (tabName === 'attendance' && !isAttendanceUnlocked) {
-                passwordPurpose = 'attendance';
-                promptAttendancePassword();
+            if (tabName === 'attendance') {
+                if (isAdminMode) {
+                    // 관리자 모드에서는 바로 출석부 해제 및 출력
+                    isAttendanceUnlocked = true;
+                    const lockedView = document.getElementById('attendanceLockedView');
+                    const unlockedView = document.getElementById('attendanceUnlockedView');
+                    if (lockedView) lockedView.classList.add('hidden');
+                    if (unlockedView) unlockedView.classList.remove('hidden');
+                    renderAttendanceList();
+                } else if (!isAttendanceUnlocked) {
+                    // 사용자 모드이고 아직 해제되지 않은 경우에만 비밀번호 요청
+                    passwordPurpose = 'attendance';
+                    promptAttendancePassword();
+                }
             } else if (tabName === 'settings') {
                 generateQrCode();
             }
@@ -1810,49 +1831,8 @@ function doPost(e) {
         /* ==========================================================================
            DATA EXPORT / IMPORT & QR SHARE
            ========================================================================== */
-        function encodeTripData(data) {
-            try {
-                const shareable = {
-                    id: data.id,
-                    title: data.title,
-                    startDate: data.startDate,
-                    endDate: data.endDate,
-                    totalBudget: data.totalBudget || 0,
-                    itineraries: data.itineraries || [],
-                    checklist: data.checklist || [],
-                    expenses: data.expenses || [],
-                    notice: data.notice || '',
-                    journal: data.journal || '',
-                    googleSheetsUrl: appData.googleSheetsUrl || DEFAULT_SHEETS_URL
-                };
-                const jsonStr = JSON.stringify(shareable);
-                return btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
-            } catch (e) {
-                console.error("Encoding error:", e);
-                return null;
-            }
-        }
-
-        function decodeTripData(encoded) {
-            try {
-                const jsonStr = decodeURIComponent(Array.prototype.map.call(atob(encoded), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-                return JSON.parse(jsonStr);
-            } catch (e) {
-                console.error("Decoding error:", e);
-                return null;
-            }
-        }
-
         function getShareableUrl() {
-            const baseUrl = window.location.origin + window.location.pathname;
-            const trip = getActiveTrip();
-            if (!trip) return baseUrl;
-
-            const encoded = encodeTripData(trip);
-            if (encoded) {
-                return `${baseUrl}#tripData=${encoded}`;
-            }
-            return baseUrl;
+            return window.location.origin + window.location.pathname;
         }
 
         function exportDataJSON() {
@@ -1889,7 +1869,7 @@ function doPost(e) {
             reader.readAsText(file);
         }
 
-        function generateQrCode(showToastMsg = false) {
+        function generateQrCode() {
             const container = document.getElementById("qrcode");
             if (!container) return;
             container.innerHTML = "";
@@ -1898,7 +1878,7 @@ function doPost(e) {
             let qrGenerated = false;
 
             try {
-                if (window.QRCode && shareUrl.length < 1200) {
+                if (window.QRCode) {
                     new QRCode(container, {
                         text: shareUrl,
                         width: 150,
@@ -1910,7 +1890,7 @@ function doPost(e) {
                     qrGenerated = true;
                 }
             } catch (err) {
-                console.warn("Client JS QRCode overflow, using API generator.", err);
+                console.warn("Client JS QRCode error, using API generator.", err);
             }
 
             if (!qrGenerated) {
@@ -1920,7 +1900,7 @@ function doPost(e) {
 
                 const img = document.createElement("img");
                 img.src = primaryApiUrl;
-                img.alt = "여행 데이터 공유 QR 코드";
+                img.alt = "스마트 트립 매니저 앱 QR 코드";
                 img.className = "w-36 h-36 rounded-lg object-contain";
                 img.onerror = function() {
                     this.onerror = null;
@@ -1928,17 +1908,13 @@ function doPost(e) {
                 };
                 container.appendChild(img);
             }
-
-            if (showToastMsg) {
-                showToast("최신 수정사항이 반영된 QR 코드가 갱신되었습니다.", "check");
-            }
         }
 
         function copyAppUrl() {
             const shareUrl = getShareableUrl();
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(shareUrl).then(() => {
-                    showToast("수정된 데이터가 포함된 공유 URL이 복사되었습니다.", "check");
+                    showToast("앱 공유 URL이 복사되었습니다.", "check");
                 });
             } else {
                 const textArea = document.createElement("textarea");
@@ -1947,45 +1923,7 @@ function doPost(e) {
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                showToast("수정된 데이터가 포함된 공유 URL이 복사되었습니다.", "check");
-            }
-        }
-
-        function checkUrlForSharedTrip() {
-            if (!window.location.hash || !window.location.hash.includes('tripData=')) return;
-
-            try {
-                const hashParams = new URLSearchParams(window.location.hash.substring(1));
-                const encodedData = hashParams.get('tripData');
-                if (!encodedData) return;
-
-                const importedTrip = decodeTripData(encodedData);
-                if (importedTrip && importedTrip.id && importedTrip.title) {
-                    if (importedTrip.googleSheetsUrl) {
-                        appData.googleSheetsUrl = importedTrip.googleSheetsUrl;
-                    }
-
-                    const existingIndex = appData.trips.findIndex(t => t.id === importedTrip.id);
-                    const promptMsg = existingIndex >= 0 
-                        ? `'${importedTrip.title}' 공유 일정을 수신했습니다. 기존 일정을 최신 내용으로 갱신하시겠습니까?`
-                        : `'${importedTrip.title}' 새 여행 일정을 수신했습니다. 추가하시겠습니까?`;
-
-                    showConfirmModal(promptMsg, function() {
-                        if (existingIndex >= 0) {
-                            appData.trips[existingIndex] = importedTrip;
-                        } else {
-                            appData.trips.push(importedTrip);
-                        }
-                        appData.activeTripId = importedTrip.id;
-                        saveData();
-                        initApp();
-                        showToast(`'${importedTrip.title}' 일정을 불러왔습니다.`, "check");
-                    });
-
-                    history.replaceState(null, '', window.location.pathname);
-                }
-            } catch (e) {
-                console.error("Error parsing shared trip data from URL:", e);
+                showToast("앱 공유 URL이 복사되었습니다.", "check");
             }
         }
 
@@ -2247,7 +2185,6 @@ function doPost(e) {
         window.onload = function() {
             registerDynamicPWA();
             initApp();
-            checkUrlForSharedTrip();
         };
     </script>
 </body>
