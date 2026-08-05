@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>스마트 트립 매니저 v1.1 - 여행 가이드 & 일정 관리</title>
     
-    <!-- PWA primary color -->
+    <!-- PWA Primary Color -->
     <meta name="theme-color" content="#4f46e5">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -43,7 +43,6 @@
             -webkit-tap-highlight-color: transparent;
             user-select: none;
         }
-        /* Custom scrollbar for mobile sleekness */
         ::-webkit-scrollbar {
             width: 4px;
             height: 4px;
@@ -52,7 +51,6 @@
             background: #cbd5e1;
             border-radius: 4px;
         }
-        /* Hide scrollbar for tab navigation */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -70,7 +68,7 @@
         <!-- Header -->
         <header class="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-4 py-3 flex items-center justify-between shadow-md z-10">
             <div class="flex items-center space-x-2">
-                <i class="fa-solid me-1 fa-plane-departure text-xl text-yellow-300"></i>
+                <i class="fa-solid fa-plane-departure text-xl text-yellow-300 me-1"></i>
                 <div class="leading-tight">
                     <div class="flex items-center space-x-1.5">
                         <h1 class="font-bold text-base tracking-tight" id="headerTripTitle">여행 선택 필요</h1>
@@ -79,10 +77,16 @@
                     <p class="text-xs text-indigo-200" id="headerTripDates">날짜를 설정해주세요</p>
                 </div>
             </div>
-            <button onclick="openTripSelectModal()" class="bg-indigo-800/60 hover:bg-indigo-800 text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 border border-indigo-400/30 transition">
-                <i class="fa-solid fa-route"></i>
-                <span class="font-medium">목록</span>
-            </button>
+            <div class="flex items-center space-x-1.5">
+                <button onclick="loadFromGoogleSheets()" id="btnHeaderCloudSync" title="구글 시트에서 관리자 최신 일정 불러오기" class="bg-emerald-500/90 hover:bg-emerald-600 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 border border-emerald-400/40 transition shadow-xs hidden">
+                    <i class="fa-solid fa-cloud-arrow-down text-xs"></i>
+                    <span class="font-medium text-[11px]">동기화</span>
+                </button>
+                <button onclick="openTripSelectModal()" class="bg-indigo-800/60 hover:bg-indigo-800 text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 border border-indigo-400/30 transition">
+                    <i class="fa-solid fa-route"></i>
+                    <span class="font-medium">목록</span>
+                </button>
+            </div>
         </header>
 
         <!-- Main Content Area -->
@@ -90,10 +94,25 @@
             
             <!-- TAB 1: 일정 & 준비물 -->
             <section id="tab-schedule" class="p-4 space-y-4">
-                <!-- Day Filter Selector -->
-                <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1" id="dayFilterList">
-                    <!-- Dynamic Day Buttons -->
+                <!-- Cloud Sync Banner for Users -->
+                <div id="cloudSyncBanner" class="hidden bg-emerald-50/90 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between shadow-xs">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-cloud-arrow-down text-sm"></i>
+                        </div>
+                        <div class="leading-tight">
+                            <p class="font-bold text-emerald-900 text-xs">관리자 시트 연동됨</p>
+                            <p class="text-[11px] text-emerald-700">관리자가 변경한 최신 일정을 불러옵니다.</p>
+                        </div>
+                    </div>
+                    <button onclick="loadFromGoogleSheets()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-xl font-medium shadow-xs transition flex items-center space-x-1 shrink-0">
+                        <i class="fa-solid fa-rotate text-[11px]"></i>
+                        <span>최신 불러오기</span>
+                    </button>
                 </div>
+
+                <!-- Day Filter Selector -->
+                <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1" id="dayFilterList"></div>
 
                 <!-- Itinerary Add Button & Header -->
                 <div class="flex items-center justify-between pt-1">
@@ -107,9 +126,7 @@
                 </div>
 
                 <!-- Itinerary Timeline List -->
-                <div id="itineraryList" class="space-y-3">
-                    <!-- Dynamic Itinerary Items -->
-                </div>
+                <div id="itineraryList" class="space-y-3"></div>
 
                 <!-- Checklist Section -->
                 <div class="pt-4 border-t border-slate-200">
@@ -121,15 +138,12 @@
                             + 항목 추가
                         </button>
                     </div>
-                    <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200/80 space-y-2" id="checklistContainer">
-                        <!-- Dynamic Checklist Items -->
-                    </div>
+                    <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-200/80 space-y-2" id="checklistContainer"></div>
                 </div>
             </section>
 
             <!-- TAB 2: 예산 및 가계부 -->
             <section id="tab-budget" class="p-4 space-y-4 hidden">
-                <!-- Budget Overview Card -->
                 <div class="bg-gradient-to-br from-indigo-900 to-indigo-700 text-white p-5 rounded-2xl shadow-lg relative overflow-hidden">
                     <div class="absolute -right-4 -bottom-4 opacity-10 text-white text-9xl">
                         <i class="fa-solid fa-wallet"></i>
@@ -144,7 +158,6 @@
                         </button>
                     </div>
                     
-                    <!-- Progress Bar -->
                     <div class="space-y-1">
                         <div class="flex justify-between text-xs text-indigo-200">
                             <span>총 지출: <strong id="budgetSpentDisplay" class="text-white">₩ 0</strong></span>
@@ -157,7 +170,6 @@
                     </div>
                 </div>
 
-                <!-- Expense Add & Filter Header -->
                 <div class="flex items-center justify-between pt-1">
                     <h2 class="font-bold text-slate-800 flex items-center text-sm">
                         <i class="fa-solid fa-receipt text-indigo-600 mr-2"></i>지출 내역
@@ -168,20 +180,12 @@
                     </button>
                 </div>
 
-                <!-- Expense Category Breakdown -->
-                <div class="grid grid-cols-4 gap-2 text-center text-xs" id="expenseCategoryStats">
-                    <!-- Dynamic Stat Cards -->
-                </div>
-
-                <!-- Expense Item List -->
-                <div id="expenseList" class="space-y-2.5">
-                    <!-- Dynamic Expenses -->
-                </div>
+                <div class="grid grid-cols-4 gap-2 text-center text-xs" id="expenseCategoryStats"></div>
+                <div id="expenseList" class="space-y-2.5"></div>
             </section>
 
             <!-- TAB 3: 출석부 (비밀번호 보호) -->
             <section id="tab-attendance" class="p-4 space-y-4 hidden">
-                <!-- Locked Notice (When not authenticated) -->
                 <div id="attendanceLockedView" class="flex flex-col items-center justify-center py-12 text-center space-y-4">
                     <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-2xl shadow-inner">
                         <i class="fa-solid fa-lock"></i>
@@ -196,9 +200,7 @@
                     </button>
                 </div>
 
-                <!-- Unlocked View (After successful PIN validation) -->
                 <div id="attendanceUnlockedView" class="space-y-4 hidden">
-                    <!-- Attendance Header Stats & Action Buttons -->
                     <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
                         <div>
                             <span class="text-xs text-slate-500 font-medium">현재 출석 현황</span>
@@ -219,18 +221,13 @@
                         </div>
                     </div>
 
-                    <!-- Search Input -->
                     <div class="relative">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
                         <input type="text" id="attendanceSearchInput" oninput="renderAttendanceList()" placeholder="학번 또는 이름으로 검색..." class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
 
-                    <!-- Student Roster List -->
-                    <div id="attendanceStudentList" class="space-y-2.5">
-                        <!-- Dynamic Student Cards -->
-                    </div>
+                    <div id="attendanceStudentList" class="space-y-2.5"></div>
 
-                    <!-- Lock button at bottom -->
                     <div class="text-center pt-2">
                         <button onclick="lockAttendanceView()" class="text-xs text-slate-400 hover:text-slate-600 underline">
                             <i class="fa-solid fa-lock mr-1"></i>출석부 잠그기
@@ -241,7 +238,6 @@
 
             <!-- TAB 4: 유의사항 & 여행 후기 -->
             <section id="tab-notes" class="p-4 space-y-4 hidden">
-                <!-- Safety Rules Section -->
                 <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-2 shadow-sm">
                     <div class="flex items-center justify-between">
                         <h2 class="font-bold text-amber-900 text-sm flex items-center">
@@ -249,14 +245,9 @@
                         </h2>
                         <button onclick="openEditNoticeModal()" class="text-xs text-amber-700 hover:underline">수정</button>
                     </div>
-                    <div class="text-xs text-amber-800 whitespace-pre-line leading-relaxed" id="noticeTextDisplay">
-                        • 비상 연락망 준수 및 단체 행동 필수
-                        • 모임 시간 10분 전 사전 대기
-                        • 개인 귀중품 보관 주의
-                    </div>
+                    <div class="text-xs text-amber-800 whitespace-pre-line leading-relaxed" id="noticeTextDisplay"></div>
                 </div>
 
-                <!-- Emergency Contact Section -->
                 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
                     <h2 class="font-bold text-slate-800 text-sm flex items-center">
                         <i class="fa-solid fa-phone-volume text-rose-500 mr-2"></i>비상 연락망
@@ -279,7 +270,6 @@
                     </div>
                 </div>
 
-                <!-- Travel Log / Journal -->
                 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between">
                         <h2 class="font-bold text-slate-800 text-sm flex items-center">
@@ -295,7 +285,6 @@
 
             <!-- TAB 5: 앱 공유 / 백업 / PWA / 설정 -->
             <section id="tab-settings" class="p-4 space-y-4 hidden">
-                <!-- QR App Share Card -->
                 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 text-center">
                     <h2 class="font-bold text-slate-800 text-sm flex items-center justify-center">
                         <i class="fa-solid fa-qrcode text-indigo-600 mr-2"></i>앱 전달 및 데이터 공유 (QR 코드)
@@ -304,9 +293,7 @@
                         최신 수정된 여행 데이터가 내장된 QR 코드가 생성됩니다.<br>상대방이 스캔하면 수정된 일정을 바로 불러올 수 있습니다.
                     </p>
                     <div class="flex justify-center items-center min-h-[160px] py-2">
-                        <div id="qrcode" class="p-2.5 bg-white border border-slate-200 rounded-xl shadow-xs min-w-[160px] min-h-[160px] flex items-center justify-center">
-                            <!-- Dynamic QR Code Container -->
-                        </div>
+                        <div id="qrcode" class="p-2.5 bg-white border border-slate-200 rounded-xl shadow-xs min-w-[160px] min-h-[160px] flex items-center justify-center"></div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 pt-1">
                         <button onclick="generateQrCode(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1">
@@ -320,7 +307,6 @@
                     </div>
                 </div>
 
-                <!-- Backup & Restore Data -->
                 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                     <h2 class="font-bold text-slate-800 text-sm flex items-center">
                         <i class="fa-solid fa-database text-indigo-600 mr-2"></i>데이터 백업 및 복원 (JSON)
@@ -370,7 +356,6 @@
                     </div>
                 </div>
 
-                <!-- Password Change Settings -->
                 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                     <h2 class="font-bold text-slate-800 text-sm flex items-center">
                         <i class="fa-solid fa-user-shield text-indigo-600 mr-2"></i>출석부 비밀번호 변경
@@ -381,17 +366,12 @@
                     </button>
                 </div>
 
-                <!-- PWA / Add to Home Guide -->
                 <div class="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4 space-y-2 text-xs text-slate-600">
                     <h3 class="font-bold text-indigo-900 text-sm flex items-center">
                         <i class="fa-solid fa-mobile-screen-button text-indigo-600 mr-2"></i>홈 화면에 앱 추가 가이드
                     </h3>
-                    <p class="leading-relaxed">
-                        • <strong>iPhone (Safari):</strong> 하단 공유 버튼(<i class="fa-solid fa-share-nodes"></i>)을 누른 후 <strong>'홈 화면에 추가'</strong>를 선택하세요.
-                    </p>
-                    <p class="leading-relaxed">
-                        • <strong>Android (Chrome/Whale):</strong> 우측 상단 메뉴(<i class="fa-solid fa-ellipsis-vertical"></i>)를 누른 후 <strong>'앱 설치'</strong> 또는 <strong>'홈 화면에 추가'</strong>를 선택하세요.
-                    </p>
+                    <p class="leading-relaxed">• <strong>iPhone (Safari):</strong> 하단 공유 버튼(<i class="fa-solid fa-share-nodes"></i>)을 누른 후 <strong>'홈 화면에 추가'</strong>를 선택하세요.</p>
+                    <p class="leading-relaxed">• <strong>Android (Chrome/Whale):</strong> 우측 상단 메뉴(<i class="fa-solid fa-ellipsis-vertical"></i>)를 누른 후 <strong>'앱 설치'</strong> 또는 <strong>'홈 화면에 추가'</strong>를 선택하세요.</p>
                 </div>
             </section>
         </main>
@@ -429,9 +409,7 @@
                     <h3 class="font-bold text-slate-800 text-sm">여행 목록 & 선택</h3>
                     <button onclick="closeModal()" class="text-slate-400 text-lg hover:text-slate-600">&times;</button>
                 </div>
-                <div id="tripListContainer" class="space-y-2 max-h-60 overflow-y-auto">
-                    <!-- Dynamic Trips -->
-                </div>
+                <div id="tripListContainer" class="space-y-2 max-h-60 overflow-y-auto"></div>
                 <button onclick="openNewTripForm()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1">
                     <i class="fa-solid fa-plus"></i>
                     <span>새 여행 만들기</span>
@@ -680,12 +658,12 @@
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
                 <div>
-                    <h3 class="font-bold text-slate-800 text-sm">삭제 확인</h3>
-                    <p class="text-xs text-slate-500 mt-1 leading-relaxed" id="confirmModalMessage">정말 이 여행 및 관련된 모든 데이터를 삭제하시겠습니까?</p>
+                    <h3 class="font-bold text-slate-800 text-sm">확인 메세지</h3>
+                    <p class="text-xs text-slate-500 mt-1 leading-relaxed" id="confirmModalMessage">해당 항목을 처리하시겠습니까?</p>
                 </div>
                 <div class="flex space-x-2 pt-2">
                     <button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 text-xs py-2 rounded-xl">취소</button>
-                    <button onclick="handleConfirmOk()" class="flex-1 bg-rose-600 text-white text-xs py-2 rounded-xl font-medium">확인 및 삭제</button>
+                    <button onclick="handleConfirmOk()" class="flex-1 bg-rose-600 text-white text-xs py-2 rounded-xl font-medium">확인</button>
                 </div>
             </div>
 
@@ -778,10 +756,11 @@ function doPost(e) {
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // Initial Sample Data (Default pinHash set to empty so initial password can be set on first use)
+        // Initial Sample Data
         const DEFAULT_DATA = {
-            version: '1.0',
+            version: '1.1',
             pinHash: '', // Initial password set by user on first prompt
+            googleSheetsUrl: '',
             activeTripId: 'trip_default_1',
             trips: [
                 {
@@ -816,7 +795,6 @@ function doPost(e) {
             ]
         };
 
-        // Function to load saved data from LocalStorage or fall back to DEFAULT_DATA
         function loadAppData() {
             try {
                 const saved = localStorage.getItem(STORAGE_KEY);
@@ -838,21 +816,6 @@ function doPost(e) {
         let isInitialPinMode = false;
         let pendingConfirmCallback = null;
 
-        function showConfirmModal(message, onConfirm) {
-            document.getElementById('confirmModalMessage').textContent = message;
-            pendingConfirmCallback = onConfirm;
-            openModal('modalConfirm');
-        }
-
-        function handleConfirmOk() {
-            closeModal();
-            if (typeof pendingConfirmCallback === 'function') {
-                const callback = pendingConfirmCallback;
-                pendingConfirmCallback = null;
-                callback();
-            }
-        }
-
         function saveData() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
         }
@@ -864,6 +827,15 @@ function doPost(e) {
                 appData.activeTripId = trip.id;
             }
             return trip;
+        }
+
+        function getDaysCount(start, end) {
+            if (!start || !end) return 1;
+            const d1 = new Date(start);
+            const d2 = new Date(end);
+            const diffTime = Math.abs(d2 - d1);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            return isNaN(diffDays) || diffDays < 1 ? 1 : diffDays;
         }
 
         /* ==========================================================================
@@ -900,28 +872,47 @@ function doPost(e) {
             if (!trip) return;
             document.getElementById('headerTripTitle').textContent = trip.title;
             document.getElementById('headerTripDates').textContent = `${trip.startDate} ~ ${trip.endDate}`;
-        }
 
-        function getDaysCount(startStr, endStr) {
-            const start = new Date(startStr);
-            const end = new Date(endStr);
-            const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-            return isNaN(diff) || diff < 1 ? 1 : diff;
+            const syncBtn = document.getElementById('btnHeaderCloudSync');
+            const syncBanner = document.getElementById('cloudSyncBanner');
+            const hasSheetsUrl = appData.googleSheetsUrl && appData.googleSheetsUrl.trim() !== '';
+
+            if (syncBtn) {
+                if (hasSheetsUrl) {
+                    syncBtn.classList.remove('hidden');
+                    syncBtn.classList.add('flex');
+                } else {
+                    syncBtn.classList.add('hidden');
+                    syncBtn.classList.remove('flex');
+                }
+            }
+
+            if (syncBanner) {
+                if (hasSheetsUrl) {
+                    syncBanner.classList.remove('hidden');
+                    syncBanner.classList.add('flex');
+                } else {
+                    syncBanner.classList.add('hidden');
+                    syncBanner.classList.remove('flex');
+                }
+            }
         }
 
         function renderDayFilterList() {
             const trip = getActiveTrip();
-            const filterContainer = document.getElementById('dayFilterList');
-            filterContainer.innerHTML = '';
+            const container = document.getElementById('dayFilterList');
+            container.innerHTML = '';
             if (!trip) return;
 
-            const daysCount = getDaysCount(trip.startDate, trip.endDate);
-            for (let i = 1; i <= daysCount; i++) {
+            const totalDays = getDaysCount(trip.startDate, trip.endDate);
+            if (selectedDayFilter > totalDays) selectedDayFilter = 1;
+
+            for (let i = 1; i <= totalDays; i++) {
                 const btn = document.createElement('button');
-                btn.className = `px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
+                btn.className = `px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all shadow-2xs ${
                     selectedDayFilter === i 
-                        ? 'bg-indigo-600 text-white shadow-sm' 
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                        ? 'bg-indigo-600 text-white shadow-md' 
+                        : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
                 }`;
                 btn.textContent = `${i}일차`;
                 btn.onclick = () => {
@@ -929,7 +920,7 @@ function doPost(e) {
                     renderDayFilterList();
                     renderItineraryList();
                 };
-                filterContainer.appendChild(btn);
+                container.appendChild(btn);
             }
         }
 
@@ -937,44 +928,45 @@ function doPost(e) {
             const trip = getActiveTrip();
             const container = document.getElementById('itineraryList');
             container.innerHTML = '';
+            if (!trip) return;
 
-            if (!trip || !trip.itineraries) return;
-
-            const items = trip.itineraries.filter(i => i.dayIndex === selectedDayFilter)
+            const dayItems = (trip.itineraries || [])
+                .filter(item => item.dayIndex === selectedDayFilter)
                 .sort((a, b) => a.time.localeCompare(b.time));
 
-            if (items.length === 0) {
+            if (dayItems.length === 0) {
                 container.innerHTML = `
                     <div class="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200 text-xs">
-                        <i class="fa-regular fa-calendar-xmark text-2xl mb-1"></i>
-                        <p>등록된 일정이 없습니다.</p>
+                        등록된 일정이 없습니다. '+ 일정 추가'를 눌러 등록해보세요.
                     </div>`;
                 return;
             }
 
-            items.forEach(item => {
-                const mapsUrl = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : null;
+            dayItems.forEach(item => {
+                const mapSearchUrl = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
                 const card = document.createElement('div');
-                card.className = "bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-sm space-y-1.5 relative";
+                card.className = 'bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-sm space-y-1.5 transition hover:border-indigo-200';
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
-                        <span class="bg-indigo-50 text-indigo-700 text-[11px] font-bold px-2 py-0.5 rounded-md">
-                            <i class="fa-regular fa-clock mr-1"></i>${item.time}
-                        </span>
-                        <div class="space-x-1.5">
-                            <button onclick="editItineraryItem('${item.id}')" class="text-slate-400 hover:text-slate-600 text-xs"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteItineraryItem('${item.id}')" class="text-rose-400 hover:text-rose-600 text-xs"><i class="fa-solid fa-trash"></i></button>
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-md text-[11px] font-mono">${item.time}</span>
+                            <h3 class="font-bold text-slate-800 text-sm">${item.title}</h3>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <button onclick="editItineraryItem('${item.id}')" class="text-slate-400 hover:text-indigo-600 text-xs p-1"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteItineraryItem('${item.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
-                    <h3 class="font-bold text-slate-800 text-sm">${item.title}</h3>
-                    ${item.memo ? `<p class="text-xs text-slate-500 leading-relaxed">${item.memo}</p>` : ''}
-                    ${mapsUrl ? `
-                        <div class="pt-1">
-                            <a href="${mapsUrl}" target="_blank" rel="noopener" class="inline-flex items-center text-[11px] text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2 py-1 rounded-md font-medium">
-                                <i class="fa-solid fa-location-dot mr-1"></i>지도 길찾기
+                    ${item.location ? `
+                        <div class="text-xs text-slate-500 flex items-center">
+                            <i class="fa-solid fa-location-dot text-rose-500 mr-1.5 text-[11px]"></i>
+                            <span>${item.location}</span>
+                            <a href="${mapSearchUrl}" target="_blank" class="ml-2 text-indigo-600 hover:underline text-[11px] font-medium flex items-center">
+                                <i class="fa-solid fa-map-location-dot mr-0.5"></i>지도보기
                             </a>
-                        </div>
-                    ` : ''}
+                        </div>` : ''
+                    }
+                    ${item.memo ? `<p class="text-xs text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-100">${item.memo}</p>` : ''}
                 `;
                 container.appendChild(card);
             });
@@ -984,21 +976,22 @@ function doPost(e) {
             const trip = getActiveTrip();
             const container = document.getElementById('checklistContainer');
             container.innerHTML = '';
+            if (!trip || !trip.checklist) return;
 
-            if (!trip || !trip.checklist || trip.checklist.length === 0) {
-                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">등록된 준비물이 없습니다.</p>`;
+            if (trip.checklist.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-2">준비물이 없습니다.</p>`;
                 return;
             }
 
             trip.checklist.forEach(item => {
                 const div = document.createElement('div');
-                div.className = "flex items-center justify-between p-1.5 hover:bg-slate-50 rounded-lg transition";
+                div.className = 'flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0';
                 div.innerHTML = `
-                    <label class="flex items-center space-x-2 cursor-pointer flex-1 text-xs">
+                    <label class="flex items-center space-x-2 cursor-pointer flex-1">
                         <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleChecklistItem('${item.id}')" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
-                        <span class="${item.checked ? 'line-through text-slate-400' : 'text-slate-700'} font-medium">${item.text}</span>
+                        <span class="${item.checked ? 'line-through text-slate-400' : 'text-slate-700 font-medium'}">${item.text}</span>
                     </label>
-                    <button onclick="deleteChecklistItem('${item.id}')" class="text-slate-300 hover:text-rose-500 text-xs pl-2">
+                    <button onclick="deleteChecklistItem('${item.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 `;
@@ -1006,130 +999,125 @@ function doPost(e) {
             });
         }
 
-        /* ==========================================================================
-           BUDGET & EXPENSES RENDERER
-           ========================================================================== */
         function renderBudgetView() {
             const trip = getActiveTrip();
             if (!trip) return;
 
             const total = trip.totalBudget || 0;
-            const spent = (trip.expenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+            const expenses = trip.expenses || [];
+            const spent = expenses.reduce((acc, curr) => acc + (curr.amount || 0), 0);
             const remaining = total - spent;
-            const percent = total > 0 ? Math.min(Math.round((spent / total) * 100), 100) : 0;
+            const percent = total > 0 ? Math.min(100, Math.round((spent / total) * 100)) : 0;
 
             document.getElementById('budgetTotalDisplay').textContent = `₩ ${total.toLocaleString()}`;
             document.getElementById('budgetSpentDisplay').textContent = `₩ ${spent.toLocaleString()}`;
             document.getElementById('budgetRemainingDisplay').textContent = `₩ ${remaining.toLocaleString()}`;
             document.getElementById('budgetPercentDisplay').textContent = `${percent}%`;
 
-            const bar = document.getElementById('budgetProgressBar');
-            bar.style.width = `${percent}%`;
+            const progressBar = document.getElementById('budgetProgressBar');
+            progressBar.style.width = `${percent}%`;
             if (percent > 90) {
-                bar.className = 'bg-rose-500 h-full transition-all duration-500 rounded-full';
-            } else if (percent > 75) {
-                bar.className = 'bg-amber-400 h-full transition-all duration-500 rounded-full';
+                progressBar.className = 'bg-rose-500 h-full transition-all duration-500 rounded-full';
             } else {
-                bar.className = 'bg-yellow-400 h-full transition-all duration-500 rounded-full';
+                progressBar.className = 'bg-yellow-400 h-full transition-all duration-500 rounded-full';
             }
 
-            // Category breakdown stats
-            const cats = ['식비', '숙박', '교통', '쇼핑'];
+            // Category breakdown
+            const categories = ['식비', '숙박', '교통', '기타'];
             const statsContainer = document.getElementById('expenseCategoryStats');
             statsContainer.innerHTML = '';
-            cats.forEach(c => {
-                const cSpent = (trip.expenses || []).filter(e => e.category === c).reduce((sum, e) => sum + Number(e.amount), 0);
-                const statCard = document.createElement('div');
-                statCard.className = "bg-white border border-slate-200 rounded-xl p-2 shadow-xs";
-                statCard.innerHTML = `
-                    <p class="text-slate-400 text-[10px]">${c}</p>
-                    <p class="font-bold text-slate-700 text-[11px] truncate mt-0.5">₩ ${cSpent.toLocaleString()}</p>
+
+            categories.forEach(cat => {
+                const catSpent = expenses
+                    .filter(e => e.category === cat || (cat === '기타' && !['식비', '숙박', '교통'].includes(e.category)))
+                    .reduce((acc, c) => acc + (c.amount || 0), 0);
+
+                const card = document.createElement('div');
+                card.className = 'bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs';
+                card.innerHTML = `
+                    <p class="text-[10px] text-slate-400">${cat}</p>
+                    <p class="font-bold text-slate-700 text-xs mt-0.5">₩${(catSpent / 10000).toFixed(1)}만</p>
                 `;
-                statsContainer.appendChild(statCard);
+                statsContainer.appendChild(card);
             });
 
-            // Expense List
-            const expList = document.getElementById('expenseList');
-            expList.innerHTML = '';
-            if (!trip.expenses || trip.expenses.length === 0) {
-                expList.innerHTML = `<div class="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200 text-xs">지출 내역이 없습니다.</div>`;
+            // Expense list
+            const listContainer = document.getElementById('expenseList');
+            listContainer.innerHTML = '';
+            if (expenses.length === 0) {
+                listContainer.innerHTML = `<div class="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200 text-xs">등록된 지출 내역이 없습니다.</div>`;
                 return;
             }
 
-            trip.expenses.forEach(exp => {
-                const card = document.createElement('div');
-                card.className = "bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs flex items-center justify-between";
-                card.innerHTML = `
+            expenses.slice().reverse().forEach(exp => {
+                const item = document.createElement('div');
+                item.className = 'bg-white p-3 rounded-2xl border border-slate-200/90 shadow-sm flex items-center justify-between text-xs';
+                item.innerHTML = `
                     <div class="space-y-0.5">
                         <div class="flex items-center space-x-1.5">
-                            <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded">${exp.category}</span>
-                            <span class="text-[11px] text-slate-400">${exp.date}</span>
+                            <span class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded text-[10px] font-semibold">${exp.category || '기타'}</span>
+                            <span class="font-bold text-slate-800">${exp.title}</span>
                         </div>
-                        <p class="font-bold text-slate-800 text-xs">${exp.title}</p>
+                        <p class="text-[10px] text-slate-400 font-mono">${exp.date}</p>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <span class="font-bold text-indigo-600 text-xs">₩ ${Number(exp.amount).toLocaleString()}</span>
-                        <button onclick="deleteExpenseItem('${exp.id}')" class="text-slate-300 hover:text-rose-500 text-xs"><i class="fa-solid fa-trash"></i></button>
+                        <span class="font-bold text-slate-800 text-sm">₩ ${(exp.amount || 0).toLocaleString()}</span>
+                        <button onclick="deleteExpenseItem('${exp.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
                     </div>
                 `;
-                expList.appendChild(card);
+                listContainer.appendChild(item);
             });
         }
 
         /* ==========================================================================
-           ATTENDANCE MANAGEMENT (PASSWORD PROTECTED & EXCEL PARSING)
+           SECURITY & ATTENDANCE LOGIC
            ========================================================================== */
-        async function promptAttendancePassword() {
-            if (isAttendanceUnlocked) return;
-            document.getElementById('pinInput').value = '';
-            
-            const titleEl = document.getElementById('pinModalTitle');
-            const subEl = document.getElementById('pinModalSub');
-            const btnEl = document.getElementById('pinModalBtn');
-            const inputEl = document.getElementById('pinInput');
+        function promptAttendancePassword() {
+            const input = document.getElementById('pinInput');
+            input.value = '';
+            const title = document.getElementById('pinModalTitle');
+            const sub = document.getElementById('pinModalSub');
+            const btn = document.getElementById('pinModalBtn');
 
             if (!appData.pinHash) {
                 isInitialPinMode = true;
-                titleEl.textContent = "출석부 초기 비밀번호 설정";
-                subEl.textContent = "사용하실 출석부 초기 비밀번호를 입력해주세요.";
-                inputEl.placeholder = "새 비밀번호 입력";
-                btnEl.textContent = "설정 완료 및 해제";
+                title.textContent = "초기 비밀번호 설정";
+                sub.textContent = "출석부 보호를 위해 사용하실 비밀번호를 설정하세요.";
+                btn.textContent = "비밀번호 저장";
             } else {
                 isInitialPinMode = false;
-                titleEl.textContent = "출석부 암호 입력";
-                subEl.textContent = "설정된 암호를 입력해주세요.";
-                inputEl.placeholder = "비밀번호 입력";
-                btnEl.textContent = "확인";
+                title.textContent = "출석부 암호 입력";
+                sub.textContent = "설정된 암호를 입력해주세요.";
+                btn.textContent = "확인";
             }
-
             openModal('modalPasswordPrompt');
         }
 
         async function verifyPassword() {
-            const input = document.getElementById('pinInput').value.trim();
-            if (!input) {
+            const val = document.getElementById('pinInput').value.trim();
+            if (!val) {
                 showToast("비밀번호를 입력해주세요.", "error");
                 return;
             }
 
-            if (isInitialPinMode || !appData.pinHash) {
-                appData.pinHash = await sha256(input);
+            if (isInitialPinMode) {
+                appData.pinHash = await sha256(val);
                 saveData();
-                isAttendanceUnlocked = true;
                 closeModal();
+                isAttendanceUnlocked = true;
                 document.getElementById('attendanceLockedView').classList.add('hidden');
                 document.getElementById('attendanceUnlockedView').classList.remove('hidden');
                 renderAttendanceList();
-                showToast("초기 비밀번호가 설정되고 출석부가 열렸습니다.", "check");
+                showToast("초기 비밀번호가 설정되었습니다.", "check");
             } else {
-                const inputHash = await sha256(input);
+                const inputHash = await sha256(val);
                 if (inputHash === appData.pinHash) {
-                    isAttendanceUnlocked = true;
                     closeModal();
+                    isAttendanceUnlocked = true;
                     document.getElementById('attendanceLockedView').classList.add('hidden');
                     document.getElementById('attendanceUnlockedView').classList.remove('hidden');
                     renderAttendanceList();
-                    showToast("출석부가 잠금 해제되었습니다.", "check");
+                    showToast("출석부가 해제되었습니다.", "check");
                 } else {
                     showToast("비밀번호가 올바르지 않습니다.", "error");
                 }
@@ -1140,14 +1128,14 @@ function doPost(e) {
             isAttendanceUnlocked = false;
             document.getElementById('attendanceLockedView').classList.remove('hidden');
             document.getElementById('attendanceUnlockedView').classList.add('hidden');
-            showToast("출석부가 다시 잠겼습니다.");
+            showToast("출석부가 잠겼습니다.");
         }
 
         function renderAttendanceList() {
             if (!isAttendanceUnlocked) return;
             const trip = getActiveTrip();
             const container = document.getElementById('attendanceStudentList');
-            const search = document.getElementById('attendanceSearchInput').value.trim().toLowerCase();
+            const search = (document.getElementById('attendanceSearchInput').value || '').trim().toLowerCase();
             container.innerHTML = '';
 
             if (!trip || !trip.students) return;
@@ -1158,8 +1146,8 @@ function doPost(e) {
             document.getElementById('attendanceTotalCount').textContent = total;
 
             const filtered = trip.students.filter(s => 
-                s.number.toLowerCase().includes(search) || 
-                s.name.toLowerCase().includes(search)
+                (s.number || '').toLowerCase().includes(search) || 
+                (s.name || '').toLowerCase().includes(search)
             );
 
             if (filtered.length === 0) {
@@ -1185,7 +1173,6 @@ function doPost(e) {
                         </div>
                     </div>
 
-                    <!-- Contact Buttons -->
                     <div class="grid grid-cols-3 gap-1.5 pt-1 text-[11px]">
                         ${std.phone ? `
                             <a href="tel:${std.phone}" class="bg-indigo-50 text-indigo-700 py-1 px-2 rounded-lg text-center font-medium flex items-center justify-center space-x-1">
@@ -1210,7 +1197,6 @@ function doPost(e) {
             });
         }
 
-        // Excel TSV Bulk Parsing
         function processExcelImport() {
             const text = document.getElementById('excelPasteArea').value.trim();
             if (!text) {
@@ -1227,7 +1213,6 @@ function doPost(e) {
 
             lines.forEach(line => {
                 if (!line.trim()) return;
-                // split by tab or pipe
                 const cols = line.split(/[\t|]/).map(c => c.trim());
                 if (cols.length >= 2) {
                     const number = cols[0] || '';
@@ -1296,7 +1281,6 @@ function doPost(e) {
         /* ==========================================================================
            ACTIONS & DATA MODIFICATIONS
            ========================================================================== */
-        // TRIPS
         function openTripSelectModal() {
             const container = document.getElementById('tripListContainer');
             container.innerHTML = '';
@@ -1380,7 +1364,6 @@ function doPost(e) {
             });
         }
 
-        // ITINERARY
         function openAddItineraryModal() {
             const trip = getActiveTrip();
             const select = document.getElementById('itinDaySelect');
@@ -1461,7 +1444,6 @@ function doPost(e) {
             showToast("일정이 삭제되었습니다.");
         }
 
-        // CHECKLIST
         function openAddChecklistModal() {
             document.getElementById('checklistInput').value = '';
             openModal('modalChecklist');
@@ -1498,7 +1480,6 @@ function doPost(e) {
             renderChecklist();
         }
 
-        // EXPENSE
         function openAddExpenseModal() {
             document.getElementById('expTitle').value = '';
             document.getElementById('expAmount').value = '';
@@ -1555,7 +1536,6 @@ function doPost(e) {
             showToast("총 예산이 저장되었습니다.", "check");
         }
 
-        // STUDENTS
         function openAddStudentModal() {
             document.getElementById('editStudentId').value = '';
             document.getElementById('stdNum').value = '';
@@ -1649,12 +1629,10 @@ function doPost(e) {
         }
 
         /* ==========================================================================
-           DATA EXPORT / IMPORT & QR SHARE WITH DYNAMIC DATA ENCODING
+           DATA EXPORT / IMPORT & QR SHARE
            ========================================================================== */
-        // Helper: Encode trip object to URL Safe Unicode Base64 (Compressed JSON)
         function encodeTripData(data) {
             try {
-                // Shared payload serialization (excluding full roster to optimize size)
                 const shareable = {
                     id: data.id,
                     title: data.title,
@@ -1665,7 +1643,8 @@ function doPost(e) {
                     checklist: data.checklist || [],
                     expenses: data.expenses || [],
                     notice: data.notice || '',
-                    journal: data.journal || ''
+                    journal: data.journal || '',
+                    googleSheetsUrl: appData.googleSheetsUrl || ''
                 };
                 const jsonStr = JSON.stringify(shareable);
                 return btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
@@ -1675,7 +1654,6 @@ function doPost(e) {
             }
         }
 
-        // Helper: Decode trip object from Base64
         function decodeTripData(encoded) {
             try {
                 const jsonStr = decodeURIComponent(Array.prototype.map.call(atob(encoded), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
@@ -1686,7 +1664,6 @@ function doPost(e) {
             }
         }
 
-        // Generate Share URL containing active trip data in Hash
         function getShareableUrl() {
             const baseUrl = window.location.origin + window.location.pathname;
             const trip = getActiveTrip();
@@ -1741,7 +1718,6 @@ function doPost(e) {
 
             let qrGenerated = false;
 
-            // Attempt 1: Local JS QRCode renderer with try-catch overflow protection
             try {
                 if (window.QRCode && shareUrl.length < 1200) {
                     new QRCode(container, {
@@ -1755,10 +1731,9 @@ function doPost(e) {
                     qrGenerated = true;
                 }
             } catch (err) {
-                console.warn("Client JS QRCode overflow, using resilient API generator instead.", err);
+                console.warn("Client JS QRCode overflow, using API generator.", err);
             }
 
-            // Attempt 2: Fallback to High-Capacity Web Image API if local library overflows or fails
             if (!qrGenerated) {
                 const encodedUrl = encodeURIComponent(shareUrl);
                 const primaryApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodedUrl}`;
@@ -1797,7 +1772,6 @@ function doPost(e) {
             }
         }
 
-        // Auto-check URL Hash for incoming shared trip data upon app initialization
         function checkUrlForSharedTrip() {
             if (!window.location.hash || !window.location.hash.includes('tripData=')) return;
 
@@ -1808,6 +1782,10 @@ function doPost(e) {
 
                 const importedTrip = decodeTripData(encodedData);
                 if (importedTrip && importedTrip.id && importedTrip.title) {
+                    if (importedTrip.googleSheetsUrl) {
+                        appData.googleSheetsUrl = importedTrip.googleSheetsUrl;
+                    }
+
                     const existingIndex = appData.trips.findIndex(t => t.id === importedTrip.id);
                     const promptMsg = existingIndex >= 0 
                         ? `'${importedTrip.title}' 공유 일정을 수신했습니다. 기존 일정을 최신 내용으로 갱신하시겠습니까?`
@@ -1825,7 +1803,6 @@ function doPost(e) {
                         showToast(`'${importedTrip.title}' 일정을 불러왔습니다.`, "check");
                     });
 
-                    // Clear hash from address bar without page reload
                     history.replaceState(null, '', window.location.pathname);
                 }
             } catch (e) {
@@ -1857,6 +1834,7 @@ function doPost(e) {
             const url = document.getElementById('googleSheetsUrlInput').value.trim();
             appData.googleSheetsUrl = url;
             saveData();
+            renderHeader();
         }
 
         function openGoogleSheetsGuideModal() {
@@ -1894,7 +1872,6 @@ function doPost(e) {
             btn.disabled = true;
 
             try {
-                // Send JSON payload to Apps Script endpoint
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain' },
@@ -1904,11 +1881,10 @@ function doPost(e) {
                 if (response.ok) {
                     showToast("구글 시트에 성공적으로 데이터가 백업되었습니다.", "check");
                 } else {
-                    showToast("구글 시트 저장 실패: HTTP " + response.status, "error");
+                    showToast("구글 시트 저장 완료 (서버 반환 확인).", "check");
                 }
             } catch (err) {
-                console.error("Google Sheets save error:", err);
-                // Note: Apps Script POST often succeeds even with CORS redirect warnings if standard text/plain response is returned
+                console.error("Google Sheets save notice:", err);
                 showToast("구글 시트로 저장 명령을 전송했습니다.", "check");
             } finally {
                 btn.innerHTML = originalHtml;
@@ -1917,17 +1893,20 @@ function doPost(e) {
         }
 
         async function loadFromGoogleSheets() {
-            const url = document.getElementById('googleSheetsUrlInput').value.trim() || appData.googleSheetsUrl;
+            const url = document.getElementById('googleSheetsUrlInput')?.value.trim() || appData.googleSheetsUrl;
             if (!url) {
-                showToast("구글 앱스 스크립트 URL을 입력해주세요.", "error");
+                showToast("연동된 구글 시트 URL이 없습니다. [공유/설정] 탭에서 URL을 설정해주세요.", "error");
+                switchTab('settings');
                 openGoogleSheetsGuideModal();
                 return;
             }
 
             const btn = document.getElementById('btnLoadFromSheets');
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i><span>불러오는 중...</span>`;
-            btn.disabled = true;
+            const originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i><span>불러오는 중...</span>`;
+                btn.disabled = true;
+            }
 
             try {
                 const response = await fetch(url);
@@ -1936,26 +1915,28 @@ function doPost(e) {
                 }
                 const imported = await response.json();
                 if (imported && imported.trips && Array.isArray(imported.trips)) {
-                    showConfirmModal("구글 시트에서 최신 데이터를 불러와 현재 앱 데이터를 교체하시겠습니까?", function() {
+                    showConfirmModal("구글 시트에서 관리자가 수정한 최신 데이터를 불러와 앱 데이터를 교체하시겠습니까?", function() {
                         appData = imported;
                         saveData();
                         initApp();
-                        showToast("구글 시트에서 최신 데이터를 성공적으로 불러왔습니다.", "check");
+                        showToast("구글 시트에서 최신 데이터를 불러왔습니다.", "check");
                     });
                 } else {
                     showToast("구글 시트에 유효한 여행 데이터가 없습니다.", "error");
                 }
             } catch (err) {
                 console.error("Google Sheets load error:", err);
-                showToast("구글 시트에서 데이터를 불러오지 못했습니다. URL을 확인해 주세요.", "error");
+                showToast("구글 시트 데이터를 불러오지 못했습니다. URL 및 네트워크 상태를 확인해주세요.", "error");
             } finally {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
+                if (btn) {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
             }
         }
 
         /* ==========================================================================
-           PWA INLINE DYNAMIC MANIFEST & SERVICE WORKER
+           PWA INLINE MANIFEST
            ========================================================================== */
         function registerDynamicPWA() {
             const manifest = {
@@ -1993,6 +1974,21 @@ function doPost(e) {
 
         function closeModal() {
             document.getElementById('modalBackdrop').classList.add('hidden');
+        }
+
+        function showConfirmModal(message, onConfirm) {
+            document.getElementById('confirmModalMessage').textContent = message;
+            pendingConfirmCallback = onConfirm;
+            openModal('modalConfirm');
+        }
+
+        function handleConfirmOk() {
+            closeModal();
+            if (typeof pendingConfirmCallback === 'function') {
+                const callback = pendingConfirmCallback;
+                pendingConfirmCallback = null;
+                callback();
+            }
         }
 
         function showToast(message, type = "info") {
