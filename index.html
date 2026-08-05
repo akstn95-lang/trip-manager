@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>스마트 트립 매니저 v1.0 - 여행 가이드 & 일정 관리</title>
+    <title>스마트 트립 매니저 v1.1 - 여행 가이드 & 일정 관리</title>
     
     <!-- PWA primary color -->
     <meta name="theme-color" content="#4f46e5">
@@ -74,7 +74,7 @@
                 <div class="leading-tight">
                     <div class="flex items-center space-x-1.5">
                         <h1 class="font-bold text-base tracking-tight" id="headerTripTitle">여행 선택 필요</h1>
-                        <span class="text-[10px] bg-indigo-500/80 text-yellow-300 font-bold px-1.5 py-0.5 rounded tracking-wide border border-indigo-400/30">v1.0</span>
+                        <span class="text-[10px] bg-indigo-500/80 text-yellow-300 font-bold px-1.5 py-0.5 rounded tracking-wide border border-indigo-400/30">v1.1</span>
                     </div>
                     <p class="text-xs text-indigo-200" id="headerTripDates">날짜를 설정해주세요</p>
                 </div>
@@ -298,16 +298,22 @@
                 <!-- QR App Share Card -->
                 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3 text-center">
                     <h2 class="font-bold text-slate-800 text-sm flex items-center justify-center">
-                        <i class="fa-solid fa-qrcode text-indigo-600 mr-2"></i>앱 전달 및 공유 (QR 코드)
+                        <i class="fa-solid fa-qrcode text-indigo-600 mr-2"></i>앱 전달 및 데이터 공유 (QR 코드)
                     </h2>
-                    <p class="text-xs text-slate-500">스마트폰 카메라로 아래 QR 코드를 스캔하면 본 웹 앱으로 접속할 수 있습니다.</p>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        최신 수정된 여행 데이터가 내장된 QR 코드가 생성됩니다.<br>상대방이 스캔하면 수정된 일정을 바로 불러올 수 있습니다.
+                    </p>
                     <div class="flex justify-center py-2">
                         <div id="qrcode" class="p-2 bg-white border border-slate-200 rounded-xl shadow-sm"></div>
                     </div>
-                    <div class="pt-1">
-                        <button onclick="copyAppUrl()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-xl border border-slate-300 font-medium transition flex items-center justify-center space-x-1.5">
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button onclick="generateQrCode(true)" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs py-2 rounded-xl font-medium transition flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            <span>QR 코드 갱신</span>
+                        </button>
+                        <button onclick="copyAppUrl()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-xl border border-slate-300 font-medium transition flex items-center justify-center space-x-1">
                             <i class="fa-regular fa-copy"></i>
-                            <span>현재 앱 URL 주소 복사</span>
+                            <span>공유 URL 복사</span>
                         </button>
                     </div>
                 </div>
@@ -679,7 +685,7 @@
            STATE MANAGEMENT & STORAGE UTILS
            ========================================================================== */
         const STORAGE_KEY = 'smart_trip_manager_v1';
-        const APP_VERSION = 'v1.0';
+        const APP_VERSION = 'v1.1';
         
         // SHA-256 Simple Hash Function for Client-Side Obfuscated Password Protection
         async function sha256(str) {
@@ -1560,8 +1566,44 @@
         }
 
         /* ==========================================================================
-           DATA EXPORT / IMPORT & QR SHARE
+           DATA EXPORT / IMPORT & QR SHARE WITH DYNAMIC DATA ENCODING
            ========================================================================== */
+        // Helper: Encode trip object to URL Safe Unicode Base64
+        function encodeTripData(data) {
+            try {
+                const jsonStr = JSON.stringify(data);
+                return btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+            } catch (e) {
+                console.error("Encoding error:", e);
+                return null;
+            }
+        }
+
+        // Helper: Decode trip object from Base64
+        function decodeTripData(encoded) {
+            try {
+                const jsonStr = decodeURIComponent(Array.prototype.map.call(atob(encoded), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+                return JSON.parse(jsonStr);
+            } catch (e) {
+                console.error("Decoding error:", e);
+                return null;
+            }
+        }
+
+        // Generate Share URL containing active trip data in Hash
+        function getShareableUrl() {
+            const baseUrl = window.location.origin + window.location.pathname;
+            const trip = getActiveTrip();
+            if (!trip) return baseUrl;
+
+            const shareableTrip = JSON.parse(JSON.stringify(trip));
+            const encoded = encodeTripData(shareableTrip);
+            if (encoded) {
+                return `${baseUrl}#tripData=${encoded}`;
+            }
+            return baseUrl;
+        }
+
         function exportDataJSON() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
             const downloadAnchor = document.createElement('a');
@@ -1596,34 +1638,75 @@
             reader.readAsText(file);
         }
 
-        function generateQrCode() {
+        function generateQrCode(showToastMsg = false) {
             const container = document.getElementById("qrcode");
             container.innerHTML = "";
-            const currentUrl = window.location.href;
+            const shareUrl = getShareableUrl();
+
             new QRCode(container, {
-                text: currentUrl,
-                width: 140,
-                height: 140,
+                text: shareUrl,
+                width: 150,
+                height: 150,
                 colorDark: "#1e1b4b",
                 colorLight: "#ffffff",
-                correctLevel: QRCode.CorrectLevel.M
+                correctLevel: QRCode.CorrectLevel.L
             });
+
+            if (showToastMsg) {
+                showToast("최신 수정사항이 반영된 QR 코드가 갱신되었습니다.", "check");
+            }
         }
 
         function copyAppUrl() {
-            const currentUrl = window.location.href;
+            const shareUrl = getShareableUrl();
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(currentUrl).then(() => {
-                    showToast("앱 URL이 클립보드에 복사되었습니다.", "check");
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showToast("수정된 데이터가 포함된 공유 URL이 복사되었습니다.", "check");
                 });
             } else {
                 const textArea = document.createElement("textarea");
-                textArea.value = currentUrl;
+                textArea.value = shareUrl;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                showToast("앱 URL이 클립보드에 복사되었습니다.", "check");
+                showToast("수정된 데이터가 포함된 공유 URL이 복사되었습니다.", "check");
+            }
+        }
+
+        // Auto-check URL Hash for incoming shared trip data upon app initialization
+        function checkUrlForSharedTrip() {
+            if (!window.location.hash || !window.location.hash.includes('tripData=')) return;
+
+            try {
+                const hashParams = new URLSearchParams(window.location.hash.substring(1));
+                const encodedData = hashParams.get('tripData');
+                if (!encodedData) return;
+
+                const importedTrip = decodeTripData(encodedData);
+                if (importedTrip && importedTrip.id && importedTrip.title) {
+                    const existingIndex = appData.trips.findIndex(t => t.id === importedTrip.id);
+                    const promptMsg = existingIndex >= 0 
+                        ? `'${importedTrip.title}' 공유 일정을 수신했습니다. 기존 일정을 최신 내용으로 갱신하시겠습니까?`
+                        : `'${importedTrip.title}' 새 여행 일정을 수신했습니다. 추가하시겠습니까?`;
+
+                    showConfirmModal(promptMsg, function() {
+                        if (existingIndex >= 0) {
+                            appData.trips[existingIndex] = importedTrip;
+                        } else {
+                            appData.trips.push(importedTrip);
+                        }
+                        appData.activeTripId = importedTrip.id;
+                        saveData();
+                        initApp();
+                        showToast(`'${importedTrip.title}' 일정을 불러왔습니다.`, "check");
+                    });
+
+                    // Clear hash from address bar without page reload
+                    history.replaceState(null, '', window.location.pathname);
+                }
+            } catch (e) {
+                console.error("Error parsing shared trip data from URL:", e);
             }
         }
 
@@ -1720,6 +1803,7 @@
         window.onload = function() {
             registerDynamicPWA();
             initApp();
+            checkUrlForSharedTrip();
         };
     </script>
 </body>
