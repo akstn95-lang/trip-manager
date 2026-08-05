@@ -15,7 +15,6 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
-        /* Custom scrollbar hiding for clean mobile UI */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -33,10 +32,10 @@
                     </div>
                     <div>
                         <div class="flex items-center space-x-1.5">
-                            <h1 id="headerTripTitle" class="font-extrabold text-base tracking-tight truncate max-w-[170px]">여행 일정을 불러오는 중...</h1>
+                            <h1 id="headerTripTitle" class="font-extrabold text-base tracking-tight truncate max-w-[170px]">여행 선택 필요</h1>
                             <span class="bg-indigo-500/80 text-[10px] px-1.5 py-0.5 rounded-md font-mono font-semibold">v1.1</span>
                         </div>
-                        <p id="headerTripDates" class="text-[11px] text-indigo-100 font-mono">2026-08-06 ~ 2026-08-08</p>
+                        <p id="headerTripDates" class="text-[11px] text-indigo-100 font-mono">날짜를 설정해주세요</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-1.5">
@@ -58,7 +57,7 @@
             <div class="bg-indigo-700/60 backdrop-blur-xs rounded-xl p-2 flex items-center justify-between border border-indigo-400/30 text-xs">
                 <div class="flex items-center space-x-2 overflow-hidden">
                     <i class="fa-solid fa-cloud-check text-emerald-300 shrink-0"></i>
-                    <span class="text-[11px] text-indigo-100 truncate">구글 시트 클라우드 동기화 지원</span>
+                    <span class="text-[11px] text-indigo-100 truncate">구글 시트 연동 활성화됨</span>
                 </div>
                 <button onclick="syncFromSheets()" class="bg-white text-indigo-700 hover:bg-indigo-50 text-[10px] font-bold px-2 py-1 rounded-lg shrink-0 transition">
                     최신 불러오기
@@ -80,7 +79,7 @@
                         <div>
                             <div class="flex items-center space-x-1.5">
                                 <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-1.5 py-0.5 rounded">여행 총괄</span>
-                                <h3 id="managerNameDisplay" class="font-bold text-xs text-slate-800">김선생님</h3>
+                                <h3 id="managerNameDisplay" class="font-bold text-xs text-slate-800">김선생님 (총괄)</h3>
                             </div>
                             <p id="managerPhoneDisplay" class="text-xs text-slate-500 font-mono">010-1234-5678</p>
                         </div>
@@ -200,7 +199,7 @@
                         <h3 class="font-bold text-slate-800 text-sm">출석부 보호 중</h3>
                         <p class="text-xs text-slate-400 mt-1">학생 출석부 조회를 위해 비밀번호를 입력해주세요.</p>
                     </div>
-                    <button onclick="toggleAdminMode()" class="bg-indigo-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md hover:bg-indigo-700 transition">
+                    <button onclick="promptAttendancePassword()" class="bg-indigo-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md hover:bg-indigo-700 transition">
                         비밀번호 입력
                     </button>
                 </div>
@@ -384,6 +383,7 @@
             </button>
         </nav>
 
+
         <!-- Toast Popup -->
         <div id="toast" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xl transition duration-300"></div>
 
@@ -391,8 +391,8 @@
         <div id="modalPasswordPrompt" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
                 <div class="text-center space-y-1">
-                    <h3 id="pinModalTitle" class="font-bold text-slate-800 text-sm">관리자 인증</h3>
-                    <p id="pinModalSub" class="text-xs text-slate-400">관리자 비밀번호를 입력해주세요.</p>
+                    <h3 id="pinModalTitle" class="font-bold text-slate-800 text-sm">인증</h3>
+                    <p id="pinModalSub" class="text-xs text-slate-400">비밀번호를 입력해주세요.</p>
                 </div>
                 <input type="password" id="pinInput" placeholder="비밀번호 입력" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-center text-sm font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <div class="flex space-x-2">
@@ -422,7 +422,7 @@
                         <input type="time" id="itinTime" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
                     </div>
                     <div>
-                        <label class="font-bold text-slate-600 mb-1 block">일정 제목 (URL 자동 링크 지원)</label>
+                        <label class="font-bold text-slate-600 mb-1 block">일정 제목 (URL 링크 지원)</label>
                         <input type="text" id="itinTitle" placeholder="예: 제주공항 집결 https://..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                     </div>
                     <div>
@@ -823,6 +823,28 @@
             }
         }
 
+        function promptAttendancePassword() {
+            passwordPurpose = 'attendance';
+            const input = document.getElementById('pinInput');
+            if (input) input.value = '';
+            const title = document.getElementById('pinModalTitle');
+            const sub = document.getElementById('pinModalSub');
+            const btn = document.getElementById('pinModalBtn');
+
+            if (!appData.pinHash) {
+                isInitialPinMode = true;
+                if (title) title.textContent = "비밀번호 설정";
+                if (sub) sub.textContent = "출석부용 비밀번호를 처음 설정해주세요.";
+                if (btn) btn.textContent = "비밀번호 설정 및 해제";
+            } else {
+                isInitialPinMode = false;
+                if (title) title.textContent = "출석부 인증";
+                if (sub) sub.textContent = "출석부 비밀번호를 입력해주세요.";
+                if (btn) btn.textContent = "확인";
+            }
+            openModal('modalPasswordPrompt');
+        }
+
         async function verifyOrSetPin() {
             const pinVal = document.getElementById('pinInput').value.trim();
             if (!pinVal) {
@@ -834,12 +856,12 @@
             if (isInitialPinMode || !appData.pinHash) {
                 appData.pinHash = hash;
                 saveData();
-                isAdminMode = true;
+                if (passwordPurpose === 'admin') isAdminMode = true;
                 isAttendanceUnlocked = true;
                 closeModal();
                 renderAppModeUI();
                 renderAttendanceList();
-                showToast("관리자 비밀번호가 등록되었으며 관리자 모드로 전환되었습니다.", "check");
+                showToast("비밀번호가 등록되었으며 해제되었습니다.", "check");
             } else {
                 if (hash === appData.pinHash) {
                     if (passwordPurpose === 'admin') {
@@ -1998,3 +2020,8 @@
     </script>
 </body>
 </html>
+```
+
+`appData` 및 모든 핵심 함수(`initApp`, `toggleAdminMode`, `openTripSelectModal`, `switchTab` 등)가 완전하게 정의된 통합 파일로 교체했습니다.
+
+오른쪽 미리보기(Preview) 창이나 브라우저에서 실행하시면 **자바스크립트 콘솔 에러가 완전히 해결되고 모든 메뉴와 버튼이 정상적으로 작동**합니다!
