@@ -1,4 +1,932 @@
-<!-- ... existing code ... -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>스마트 트립 매니저 v1.1</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom scrollbar hiding for clean mobile UI */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white pb-24">
+
+    <div class="max-w-md mx-auto min-h-screen bg-slate-50 flex flex-col shadow-2xl relative border-x border-slate-200">
+        
+        <!-- App Top Header -->
+        <header class="bg-indigo-600 text-white p-4 sticky top-0 z-30 shadow-md">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-white/20 p-2 rounded-xl backdrop-blur-xs">
+                        <i class="fa-solid fa-plane-departure text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-1.5">
+                            <h1 id="headerTripTitle" class="font-extrabold text-base tracking-tight truncate max-w-[170px]">여행 일정을 불러오는 중...</h1>
+                            <span class="bg-indigo-500/80 text-[10px] px-1.5 py-0.5 rounded-md font-mono font-semibold">v1.1</span>
+                        </div>
+                        <p id="headerTripDates" class="text-[11px] text-indigo-100 font-mono">2026-08-06 ~ 2026-08-08</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1.5">
+                    <button id="btnSyncCloud" onclick="syncFromSheets()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] px-2.5 py-1.5 rounded-lg flex items-center space-x-1 font-bold shadow-xs transition active:scale-95">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <span>동기화</span>
+                    </button>
+                    <button id="btnHeaderMode" onclick="toggleAdminMode()" class="bg-white/15 hover:bg-white/25 text-white text-[11px] px-2.5 py-1.5 rounded-lg flex items-center space-x-1 border border-white/20 transition active:scale-95">
+                        <i id="headerModeIcon" class="fa-solid fa-user-gear text-amber-300"></i>
+                        <span id="headerModeText">사용자</span>
+                    </button>
+                    <button onclick="openTripSelectModal()" class="bg-white/10 hover:bg-white/20 text-white text-[11px] px-2 py-1.5 rounded-lg border border-white/20 transition">
+                        <i class="fa-solid fa-list-ul"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Global Cloud Sync Banner -->
+            <div class="bg-indigo-700/60 backdrop-blur-xs rounded-xl p-2 flex items-center justify-between border border-indigo-400/30 text-xs">
+                <div class="flex items-center space-x-2 overflow-hidden">
+                    <i class="fa-solid fa-cloud-check text-emerald-300 shrink-0"></i>
+                    <span class="text-[11px] text-indigo-100 truncate">구글 시트 클라우드 동기화 지원</span>
+                </div>
+                <button onclick="syncFromSheets()" class="bg-white text-indigo-700 hover:bg-indigo-50 text-[10px] font-bold px-2 py-1 rounded-lg shrink-0 transition">
+                    최신 불러오기
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content View Area -->
+        <main class="flex-1 p-4 space-y-4">
+
+            <section id="tab-schedule" class="space-y-4">
+                
+                <!-- Travel Manager Contact Card -->
+                <div class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                            <i class="fa-solid fa-headset text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-1.5">
+                                <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-1.5 py-0.5 rounded">여행 총괄</span>
+                                <h3 id="managerNameDisplay" class="font-bold text-xs text-slate-800">김선생님</h3>
+                            </div>
+                            <p id="managerPhoneDisplay" class="text-xs text-slate-500 font-mono">010-1234-5678</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <a id="btnManagerCall" href="tel:010-1234-5678" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-3 py-2 rounded-xl flex items-center space-x-1 shadow-xs transition">
+                            <i class="fa-solid fa-phone"></i>
+                            <span>전화</span>
+                        </a>
+                        <button onclick="openEditManagerModal()" class="admin-only hidden text-slate-400 hover:text-indigo-600 text-xs p-2">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Day Filter Tabs -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h2 class="font-bold text-slate-800 text-sm flex items-center">
+                            <i class="fa-solid fa-calendar-day text-indigo-600 mr-1.5"></i>일차별 일정
+                        </h2>
+                        <button onclick="openAddItineraryModal()" class="admin-only hidden bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl shadow-xs transition flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>일정 추가</span>
+                        </button>
+                    </div>
+                    <div id="dayFilterList" class="flex items-center space-x-2 overflow-x-auto pb-1 no-scrollbar">
+                        <!-- Day buttons inserted by JS -->
+                    </div>
+                </div>
+
+                <!-- Itinerary Items List -->
+                <div id="itineraryList" class="space-y-3">
+                    <!-- Itinerary Cards -->
+                </div>
+
+                <!-- Checklist Section -->
+                <div class="bg-slate-100/80 rounded-2xl p-3.5 border border-slate-200/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-xs text-slate-800 flex items-center">
+                            <i class="fa-solid fa-list-check text-indigo-600 mr-1.5"></i>준비물 체크리스트
+                        </h3>
+                        <button onclick="openAddChecklistModal()" class="admin-only hidden text-indigo-600 hover:text-indigo-800 text-xs font-bold flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>항목 추가</span>
+                        </button>
+                    </div>
+                    <div id="checklistContainer" class="space-y-2">
+                        <!-- Checklist Items -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-budget" class="space-y-4 hidden">
+                <!-- Budget Overview Card -->
+                <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl p-4 text-white shadow-lg space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-indigo-200">총 예산 잔액 현황</span>
+                        <button onclick="openSetBudgetModal()" class="admin-only hidden bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg border border-white/20 transition">
+                            <i class="fa-solid fa-pen mr-1"></i>예산 수정
+                        </button>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-extrabold font-mono tracking-tight" id="balanceDisplay">0원</div>
+                        <div class="flex justify-between text-xs text-indigo-100 mt-1">
+                            <span>총 예산: <span id="totalBudgetDisplay" class="font-bold font-mono">0원</span></span>
+                            <span>지출: <span id="totalSpentDisplay" class="font-bold font-mono text-rose-300">0원</span></span>
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-[10px] text-indigo-200">
+                            <span>소진율</span>
+                            <span id="budgetPercentText" class="font-bold font-mono">0%</span>
+                        </div>
+                        <div class="w-full bg-indigo-950/40 rounded-full h-2.5 p-0.5 overflow-hidden">
+                            <div id="budgetProgressBar" class="bg-emerald-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Breakdown (Horizontal Scroll) -->
+                <div class="space-y-2">
+                    <h3 class="font-bold text-xs text-slate-700 flex items-center">
+                        <i class="fa-solid fa-chart-pie text-indigo-600 mr-1.5"></i>카테고리별 지출 통계
+                    </h3>
+                    <div id="categoryBreakdownList" class="flex space-x-2 overflow-x-auto pb-1 no-scrollbar">
+                        <!-- Category summary chips -->
+                    </div>
+                </div>
+
+                <!-- Expense Records List -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-xs text-slate-700 flex items-center">
+                            <i class="fa-solid fa-receipt text-indigo-600 mr-1.5"></i>지출 내역
+                        </h3>
+                        <button onclick="openAddExpenseModal()" class="admin-only hidden bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl shadow-xs transition flex items-center space-x-1">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>지출 추가</span>
+                        </button>
+                    </div>
+                    <div id="expenseListContainer" class="space-y-2">
+                        <!-- Expense item cards -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-attendance" class="space-y-4 hidden">
+                <!-- Locked View (When password required in User mode) -->
+                <div id="attendanceLockedView" class="bg-white rounded-2xl p-8 text-center space-y-4 border border-slate-200 shadow-xs">
+                    <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">출석부 보호 중</h3>
+                        <p class="text-xs text-slate-400 mt-1">학생 출석부 조회를 위해 비밀번호를 입력해주세요.</p>
+                    </div>
+                    <button onclick="toggleAdminMode()" class="bg-indigo-600 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md hover:bg-indigo-700 transition">
+                        비밀번호 입력
+                    </button>
+                </div>
+
+                <!-- Unlocked Attendance View -->
+                <div id="attendanceUnlockedView" class="space-y-3 hidden">
+                    
+                    <!-- Mode Controls Header -->
+                    <div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-xs space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex bg-slate-100 p-1 rounded-xl space-x-1 text-xs font-bold">
+                                <button id="btnCheckModeMain" onclick="setAttendanceMode('main')" class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white shadow-xs transition">기본 점검</button>
+                                <button id="btnCheckModeMid" onclick="setAttendanceMode('mid')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-200 transition">중간 점검</button>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="openAddStudentModal()" class="admin-only hidden bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-2 py-1.5 rounded-lg transition">
+                                    + 학생
+                                </button>
+                                <button onclick="openModal('modalExcelImport')" class="admin-only hidden bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1.5 rounded-lg transition">
+                                    <i class="fa-solid fa-file-excel mr-1"></i>엑셀
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Quick Control Bar (Admin Only) -->
+                        <div class="admin-only hidden pt-2 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-[10px] text-slate-400 font-medium">빠른 조작:</span>
+                            <div class="flex items-center space-x-1.5">
+                                <button onclick="markAllMainCheck()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-1 rounded-md transition">전원 출석</button>
+                                <button onclick="resetMainCheckState()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10px] font-bold px-2 py-1 rounded-md transition">초기화</button>
+                            </div>
+                        </div>
+
+                        <!-- Status Title & Unchecked Filter Toggle -->
+                        <div class="flex items-center justify-between pt-1 text-xs">
+                            <div class="flex items-center space-x-1">
+                                <span id="attendanceStatusTitle" class="font-bold text-slate-800">출석 현황:</span>
+                                <span class="font-bold font-mono text-indigo-600"><span id="attendanceCheckedCount">0</span>/<span id="attendanceTotalCount">0</span>명</span>
+                                <span id="attendanceAbsentBadge" class="text-[10px] text-rose-500 font-bold ml-1"></span>
+                            </div>
+                            <button onclick="setStudentFilter(!showOnlyUncheckedStudents)" id="btnFilterUnchecked" class="text-[10px] px-2 py-1 rounded-md font-bold transition border border-slate-200 bg-slate-50 text-slate-600">
+                                미출석자만 보기
+                            </button>
+                        </div>
+
+                        <!-- Search Box -->
+                        <div>
+                            <input type="text" id="attendanceSearchInput" oninput="renderAttendanceList()" placeholder="이름 또는 학번 검색..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Student Roll Call Cards List -->
+                    <div id="attendanceStudentList" class="space-y-2">
+                        <!-- Student Item Cards -->
+                    </div>
+                </div>
+            </section>
+
+            <section id="tab-notes" class="space-y-4 hidden">
+                <!-- Safety Notice Card -->
+                <div class="bg-amber-50/80 rounded-2xl p-4 border border-amber-200/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-xs text-amber-800 flex items-center">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-600 mr-1.5"></i>여행 안전 및 유의사항
+                        </h3>
+                        <button onclick="openEditNoticeModal()" class="admin-only hidden text-amber-700 hover:text-amber-900 text-xs font-bold">수정</button>
+                    </div>
+                    <p id="noticeTextDisplay" class="text-xs text-amber-900/80 whitespace-pre-line leading-relaxed">
+                        1. 단체 이동 시 시간을 철저히 준수해주세요.
+                        2. 비상상황 발생 시 담당 선생님께 바로 연락하세요.
+                    </p>
+                </div>
+
+                <!-- Travel Journal / Diary -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-xs text-slate-800 flex items-center">
+                            <i class="fa-solid fa-book-bookmark text-indigo-600 mr-1.5"></i>여행 후기 및 자유 기록
+                        </h3>
+                        <button onclick="saveTravelJournal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-xs transition">저장</button>
+                    </div>
+                    <textarea id="travelJournalInput" rows="6" placeholder="여행 중 기억하고 싶은 추억이나 메모를 기록해보세요..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                </div>
+            </section>
+
+            <section id="tab-settings" class="space-y-4 hidden">
+                
+                <!-- Admin Status Card -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="space-y-0.5">
+                            <span id="modeStatusBadge" class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold text-[10px]">사용자 모드</span>
+                            <h3 id="settingsModeTitle" class="font-bold text-xs text-slate-800">현재: 사용자 모드</h3>
+                            <p id="settingsModeSub" class="text-[11px] text-slate-400">일정 편집 및 시트 저장은 관리자 전환이 필요합니다.</p>
+                        </div>
+                        <button id="settingsModeBtn" onclick="toggleAdminMode()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-2 rounded-xl shadow-xs transition">
+                            관리자 전환
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Google Sheets Cloud Sync Config -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
+                    <h3 class="font-bold text-xs text-slate-800 flex items-center">
+                        <i class="fa-solid fa-table text-emerald-600 mr-1.5"></i>구글 시트 연동 설정
+                    </h3>
+                    <div class="space-y-2">
+                        <input type="text" id="googleSheetsUrlInput" placeholder="Google Apps Script 웹 앱 URL" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="syncFromSheets()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold py-2 rounded-xl transition flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-cloud-arrow-down"></i>
+                                <span>최신 불러오기</span>
+                            </button>
+                            <button onclick="syncToSheets()" class="admin-only hidden bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 rounded-xl shadow-xs transition flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <span>구글 시트로 저장</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- App Share & QR Code Card -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs text-center space-y-3">
+                    <h3 class="font-bold text-xs text-slate-800 flex items-center justify-center">
+                        <i class="fa-solid fa-qrcode text-indigo-600 mr-1.5"></i>앱 전달 및 QR 코드 공유
+                    </h3>
+                    <p class="text-[11px] text-slate-400">주변 동행자나 학생에게 QR 코드를 보여주어 웹 앱을 즉시 공유하세요.</p>
+                    <div id="qrCodeContainer" class="p-2 bg-slate-50 rounded-2xl border border-slate-100 inline-block min-w-[180px] min-h-[180px]">
+                        <!-- QR Image dynamically created -->
+                    </div>
+                    <div>
+                        <button onclick="copyAppUrl()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2 rounded-xl transition">
+                            <i class="fa-solid fa-copy mr-1"></i>공유 URL 복사
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Backup & Restore Section -->
+                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs space-y-3">
+                    <h3 class="font-bold text-xs text-slate-800 flex items-center">
+                        <i class="fa-solid fa-database text-indigo-600 mr-1.5"></i>데이터 백업 및 복원 (JSON)
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="exportJsonData()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-xl transition flex items-center justify-center space-x-1">
+                            <i class="fa-solid fa-download"></i>
+                            <span>JSON 내보내기</span>
+                        </button>
+                        <label class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-xl transition flex items-center justify-center space-x-1 cursor-pointer">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>JSON 불러오기</span>
+                            <input type="file" accept=".json" onchange="importJsonData(event)" class="hidden">
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <nav class="bg-white/95 backdrop-blur-md border-t border-slate-200 fixed bottom-0 left-0 right-0 max-w-md mx-auto z-40 h-16 flex items-center justify-around px-2 shadow-lg">
+            <button id="nav-schedule" onclick="switchTab('schedule')" class="flex flex-col items-center justify-center flex-1 h-full text-indigo-600 font-bold transition">
+                <i class="fa-solid fa-calendar-days text-base"></i>
+                <span class="text-[10px] mt-1">일정&짐</span>
+            </button>
+            <button id="nav-budget" onclick="switchTab('budget')" class="flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-indigo-600 transition">
+                <i class="fa-solid fa-calculator text-base"></i>
+                <span class="text-[10px] mt-1">가계부</span>
+            </button>
+            <button id="nav-attendance" onclick="switchTab('attendance')" class="flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-indigo-600 transition">
+                <i class="fa-solid fa-clipboard-user text-base"></i>
+                <span class="text-[10px] mt-1">출석부</span>
+            </button>
+            <button id="nav-notes" onclick="switchTab('notes')" class="flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-indigo-600 transition">
+                <i class="fa-solid fa-note-sticky text-base"></i>
+                <span class="text-[10px] mt-1">안내&후기</span>
+            </button>
+            <button id="nav-settings" onclick="switchTab('settings')" class="flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-indigo-600 transition">
+                <i class="fa-solid fa-gear text-base"></i>
+                <span class="text-[10px] mt-1">공유/설정</span>
+            </button>
+        </nav>
+
+        <!-- Toast Popup -->
+        <div id="toast" class="hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xl transition duration-300"></div>
+
+        <!-- Modal: Password Prompt / Set PIN -->
+        <div id="modalPasswordPrompt" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl">
+                <div class="text-center space-y-1">
+                    <h3 id="pinModalTitle" class="font-bold text-slate-800 text-sm">관리자 인증</h3>
+                    <p id="pinModalSub" class="text-xs text-slate-400">관리자 비밀번호를 입력해주세요.</p>
+                </div>
+                <input type="password" id="pinInput" placeholder="비밀번호 입력" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-center text-sm font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="flex space-x-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2.5 rounded-xl transition">취소</button>
+                    <button id="pinModalBtn" onclick="verifyOrSetPin()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl transition shadow-xs">확인</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Image Lightbox Viewer -->
+        <div id="modalImageViewer" class="modal-overlay hidden fixed inset-0 bg-slate-950/90 z-50 flex items-center justify-center p-4" onclick="closeModal()">
+            <img id="imageViewerImg" src="" class="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl">
+        </div>
+
+        <!-- Modal: Add / Edit Itinerary Item -->
+        <div id="modalItinerary" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-3 shadow-2xl">
+                <h3 id="itineraryModalTitle" class="font-bold text-slate-800 text-sm">일정 추가</h3>
+                <input type="hidden" id="editItineraryId">
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">일차 선택</label>
+                        <select id="itinDaySelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"></select>
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">시간</label>
+                        <input type="time" id="itinTime" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">일정 제목 (URL 자동 링크 지원)</label>
+                        <input type="text" id="itinTitle" placeholder="예: 제주공항 집결 https://..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">장소 / 주소 (지도 연동)</label>
+                        <input type="text" id="itinLocation" placeholder="예: 제주시 공항로 2" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">상세 메모</label>
+                        <textarea id="itinMemo" rows="3" placeholder="메모 내용 입력..." class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                    </div>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2.5 rounded-xl transition">취소</button>
+                    <button onclick="saveItineraryItem()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl transition shadow-xs">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Add Checklist Item -->
+        <div id="modalChecklist" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-3 shadow-2xl">
+                <h3 class="font-bold text-slate-800 text-sm">준비물 항목 추가</h3>
+                <input type="text" id="checklistInput" placeholder="예: 신분증/학생증" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="flex space-x-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 rounded-xl transition">취소</button>
+                    <button onclick="saveChecklistItem()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 rounded-xl transition">추가</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Set Total Budget -->
+        <div id="modalSetBudget" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-3 shadow-2xl">
+                <h3 class="font-bold text-slate-800 text-sm">총 예산 설정</h3>
+                <input type="number" id="totalBudgetInput" placeholder="예: 1500000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <div class="flex space-x-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 rounded-xl transition">취소</button>
+                    <button onclick="saveTotalBudget()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 rounded-xl transition">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Add Expense Item -->
+        <div id="modalExpense" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-3 shadow-2xl">
+                <h3 class="font-bold text-slate-800 text-sm">지출 내역 추가</h3>
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">날짜</label>
+                        <input type="date" id="expDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">카테고리</label>
+                        <select id="expCategory" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2">
+                            <option value="식비">식비</option>
+                            <option value="숙박">숙박</option>
+                            <option value="교통">교통</option>
+                            <option value="관광/체험">관광/체험</option>
+                            <option value="쇼핑">쇼핑</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">지출 내역명</label>
+                        <input type="text" id="expTitle" placeholder="예: 점심 단체 식대" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">금액 (원)</label>
+                        <input type="number" id="expAmount" placeholder="예: 350000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono">
+                    </div>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 rounded-xl transition">취소</button>
+                    <button onclick="saveExpenseItem()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 rounded-xl transition">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Add / Edit Student -->
+        <div id="modalStudent" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-3 shadow-2xl">
+                <h3 class="font-bold text-slate-800 text-sm">학생 등록/수정</h3>
+                <input type="hidden" id="editStudentId">
+                <div class="space-y-2 text-xs">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="font-bold text-slate-600 mb-1 block">학번(4자리)</label>
+                            <input type="text" id="stdNum" placeholder="10101" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono">
+                        </div>
+                        <div>
+                            <label class="font-bold text-slate-600 mb-1 block">이름</label>
+                            <input type="text" id="stdName" placeholder="홍길동" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">본인 연락처</label>
+                        <input type="text" id="stdPhone" placeholder="010-0000-0000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">엄마 연락처</label>
+                        <input type="text" id="stdMomPhone" placeholder="010-0000-0000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">아빠 연락처</label>
+                        <input type="text" id="stdDadPhone" placeholder="010-0000-0000" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">참고사항 (알레르기, 멀미 등)</label>
+                        <input type="text" id="stdNotes" placeholder="견과류 알레르기 있음" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2">
+                    </div>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 rounded-xl transition">취소</button>
+                    <button onclick="saveStudentItem()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 rounded-xl transition">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Excel Bulk Paste Import -->
+        <div id="modalExcelImport" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-3 shadow-2xl">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center">
+                    <i class="fa-solid fa-file-excel text-emerald-600 mr-1.5"></i>엑셀 명단 일괄 붙여넣기
+                </h3>
+                <p class="text-[11px] text-slate-400">엑셀표에서 아래 순서대로 복사하여 붙여넣어주세요:<br><span class="font-mono text-slate-600 font-bold">학번 | 이름 | 본인 | 엄마 | 아빠 | 참고</span></p>
+                <textarea id="excelPasteArea" rows="6" placeholder="10101	강민우	010-1111-2222	010-1111-3333	010-1111-4444	멀미약" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-[11px] font-mono leading-relaxed focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"></textarea>
+                <div class="flex space-x-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 rounded-xl transition">취소</button>
+                    <button onclick="processExcelImport()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-xl transition shadow-xs">일괄 등록</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Edit Safety Notice -->
+        <div id="modalNotice" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-3 shadow-2xl">
+                <h3 class="font-bold text-slate-800 text-sm">유의사항 수정</h3>
+                <textarea id="noticeInputArea" rows="5" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs leading-relaxed focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+                <div class="flex space-x-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 rounded-xl transition">취소</button>
+                    <button onclick="saveNoticeText()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 rounded-xl transition">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Edit Manager Contact -->
+        <div id="modalEditManager" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-3 shadow-2xl">
+                <h3 class="font-bold text-slate-800 text-sm">여행 담당자 정보 수정</h3>
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">담당자 이름/직책</label>
+                        <input type="text" id="managerNameInput" placeholder="예: 김선생님 (총괄)" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">연락처</label>
+                        <input type="text" id="managerPhoneInput" placeholder="010-1234-5678" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono">
+                    </div>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 rounded-xl transition">취소</button>
+                    <button onclick="saveManagerContact()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 rounded-xl transition">저장</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Select / Switch Active Trip -->
+        <div id="modalTripSelect" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-3 shadow-2xl">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold text-slate-800 text-sm">여행 일정 선택</h3>
+                    <button onclick="openNewTripForm()" class="admin-only hidden bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold text-xs px-2.5 py-1 rounded-lg transition">+ 새 여행</button>
+                </div>
+                <div id="tripListContainer" class="space-y-2 max-h-60 overflow-y-auto">
+                    <!-- Trip List Items -->
+                </div>
+                <button onclick="closeModal()" class="w-full bg-slate-100 text-slate-700 font-bold text-xs py-2 rounded-xl transition">닫기</button>
+            </div>
+        </div>
+
+        <!-- Modal: New Trip Form -->
+        <div id="modalNewTrip" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-3 shadow-2xl">
+                <h3 class="font-bold text-slate-800 text-sm">새 여행 생성</h3>
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">여행 제목</label>
+                        <input type="text" id="newTripTitle" placeholder="예: 2026 제주도 수학여행" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">시작일</label>
+                        <input type="date" id="newTripStartDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono">
+                    </div>
+                    <div>
+                        <label class="font-bold text-slate-600 mb-1 block">종료일</label>
+                        <input type="date" id="newTripEndDate" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-2 font-mono">
+                    </div>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2 rounded-xl transition">취소</button>
+                    <button onclick="createNewTrip()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2 rounded-xl transition">생성</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Generic Confirmation Dialog -->
+        <div id="modalConfirm" class="modal-overlay hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl text-center">
+                <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-circle-question"></i>
+                </div>
+                <p id="confirmModalMsg" class="text-xs font-bold text-slate-800 leading-relaxed"></p>
+                <div class="flex space-x-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-2.5 rounded-xl transition">취소</button>
+                    <button onclick="executeConfirmCallback()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-2.5 rounded-xl transition shadow-xs">확인</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'smart_trip_manager_v11_data';
+        const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwxUyMiOYjaX94eB6omoVX_fO4nzNIZOThbKHAkprJtN07i9Tmc6SyPK1r4-SuJCY4mHA/exec';
+
+        // Global Application State Variables
+        let appData = loadAppData();
+        let selectedDayFilter = 1;
+        let isAdminMode = false;
+        let isAttendanceUnlocked = false;
+        let attendanceCheckMode = 'main'; // 'main' or 'mid'
+        let showOnlyUncheckedStudents = false;
+        let currentActiveTab = 'schedule';
+        let passwordPurpose = 'attendance';
+        let isInitialPinMode = false;
+        let pendingConfirmCallback = null;
+
+        function createInitialAppData() {
+            return {
+                pinHash: "",
+                googleSheetsUrl: DEFAULT_SHEETS_URL,
+                activeTripId: "trip_1",
+                trips: [
+                    {
+                        id: "trip_1",
+                        title: "2026 수학여행 (제주도)",
+                        startDate: "2026-08-06",
+                        endDate: "2026-08-08",
+                        totalBudget: 1500000,
+                        managerName: "김선생님 (총괄)",
+                        managerPhone: "010-1234-5678",
+                        noticeText: "1. 버스 이동 시 반드시 안전벨트를 착용해 주세요.\n2. 지정된 단체 활동 시간 이탈 금지.\n3. 숙소 입실 시 비상구 위치를 파악하세요.",
+                        journal: "제주도에서의 즐거운 3일간의 기록...",
+                        itineraries: [
+                            {
+                                id: "itin_1",
+                                dayIndex: 1,
+                                time: "08:30",
+                                title: "학교 집결 및 인원 점검",
+                                location: "서울특별시 강남구 테헤란로 1",
+                                memo: "버스타고 김포공항으로 이동 (안전벨트 필수)",
+                                photos: []
+                            },
+                            {
+                                id: "itin_2",
+                                dayIndex: 1,
+                                time: "12:00",
+                                title: "제주공항 도착 및 점심 식사",
+                                location: "제주특별자치도 제주시 공항로 2",
+                                memo: "점심 식당 안내: https://jejutrip.example.com",
+                                photos: []
+                            }
+                        ],
+                        checklist: [
+                            { id: "chk_1", text: "신분증 / 학생증", checked: true },
+                            { id: "chk_2", text: "세면도구 및 수건", checked: true },
+                            { id: "chk_3", text: "개인 상비약", checked: false },
+                            { id: "chk_4", text: "보조배터리 및 충전기", checked: false }
+                        ],
+                        expenses: [
+                            { id: "exp_1", date: "2026-08-06", category: "식비", title: "첫날 점심 식대", amount: 350000 },
+                            { id: "exp_2", date: "2026-08-06", category: "관광/체험", title: "입장권 단체 구매", amount: 120000 }
+                        ],
+                        students: [
+                            { id: "std_1", num: "10101", name: "강민우", phone: "010-1111-2222", momPhone: "010-1111-3333", dadPhone: "010-1111-4444", notes: "멀미약 챙기기", checked: true, isAbsent: false, midChecked: true },
+                            { id: "std_2", num: "10102", name: "김서연", phone: "010-2222-3333", momPhone: "010-2222-4444", dadPhone: "010-2222-5555", notes: "", checked: true, isAbsent: false, midChecked: true },
+                            { id: "std_3", num: "10103", name: "박준서", phone: "010-3333-4444", momPhone: "010-3333-5555", dadPhone: "010-3333-6666", notes: "견과류 알레르기", checked: false, isAbsent: false, midChecked: false },
+                            { id: "std_4", num: "10104", name: "이지은", phone: "010-4444-5555", momPhone: "010-4444-6666", dadPhone: "010-4444-7777", notes: "", checked: false, isAbsent: true, midChecked: false }
+                        ]
+                    }
+                ]
+            };
+        }
+
+        function loadAppData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try { return JSON.parse(saved); } catch (e) { console.error(e); }
+            }
+            return createInitialAppData();
+        }
+
+        function saveData() {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appData)); }
+            catch (e) { console.error("Save error:", e); }
+        }
+
+        function getActiveTrip() {
+            if (!appData || !appData.trips || appData.trips.length === 0) return null;
+            return appData.trips.find(t => t.id === appData.activeTripId) || appData.trips[0];
+        }
+
+        async function sha256(str) {
+            const buffer = new TextEncoder().encode(str);
+            const digest = await crypto.subtle.digest('SHA-256', buffer);
+            return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function linkify(text) {
+            if (!text) return '';
+            const urlPattern = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+            return text.replace(urlPattern, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline font-medium"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] mr-1"></i>$1</a>');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.className = `fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xl transition duration-300 ${
+                type === 'error' ? 'bg-rose-600' : type === 'check' ? 'bg-emerald-600' : 'bg-slate-800'
+            }`;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2500);
+        }
+
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
+        }
+
+        function showConfirmModal(message, callback) {
+            const msgEl = document.getElementById('confirmModalMsg');
+            if (msgEl) msgEl.textContent = message;
+            pendingConfirmCallback = callback;
+            openModal('modalConfirm');
+        }
+
+        function executeConfirmCallback() {
+            if (typeof pendingConfirmCallback === 'function') {
+                pendingConfirmCallback();
+            }
+            pendingConfirmCallback = null;
+            closeModal();
+        }
+
+        function renderHeader() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            const titleEl = document.getElementById('headerTripTitle');
+            const datesEl = document.getElementById('headerTripDates');
+            if (titleEl) titleEl.textContent = trip.title || "여행 일정을 선택하세요";
+            if (datesEl) datesEl.textContent = `${trip.startDate || ''} ~ ${trip.endDate || ''}`;
+        }
+
+        function renderAppModeUI() {
+            const icon = document.getElementById('headerModeIcon');
+            const text = document.getElementById('headerModeText');
+            const btn = document.getElementById('btnHeaderMode');
+            const badge = document.getElementById('modeStatusBadge');
+            const desc = document.getElementById('settingsModeSub');
+            const modeTitle = document.getElementById('settingsModeTitle');
+            const modeBtn = document.getElementById('settingsModeBtn');
+
+            if (isAdminMode) {
+                if (icon) icon.className = "fa-solid fa-user-shield text-emerald-300";
+                if (text) text.textContent = "관리자";
+                if (btn) btn.className = "bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-2.5 py-1.5 rounded-lg flex items-center space-x-1 border border-emerald-400/40 transition shadow-xs font-bold";
+                if (badge) { badge.className = "bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold text-[10px]"; badge.textContent = "관리자 모드"; }
+                if (desc) desc.textContent = "모든 항목 수정, 삭제 및 시트 업로드가 설정 가능합니다.";
+                if (modeTitle) modeTitle.textContent = "현재: 관리자 모드";
+                if (modeBtn) modeBtn.textContent = "사용자 모드 전환";
+
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+            } else {
+                if (icon) icon.className = "fa-solid fa-user-gear text-amber-300";
+                if (text) text.textContent = "사용자";
+                if (btn) btn.className = "bg-white/15 hover:bg-white/25 text-white text-[11px] px-2.5 py-1.5 rounded-lg flex items-center space-x-1 border border-white/20 transition";
+                if (badge) { badge.className = "bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold text-[10px]"; badge.textContent = "사용자 모드"; }
+                if (desc) desc.textContent = "일정 편집 및 시트 저장에는 관리자 모드 전환이 필요합니다.";
+                if (modeTitle) modeTitle.textContent = "현재: 사용자 모드";
+                if (modeBtn) modeBtn.textContent = "관리자 전환";
+
+                document.querySelectorAll('.admin-only').forEach(el => el.classList.add('hidden'));
+            }
+        }
+
+        async function verifyOrSetPin() {
+            const pinVal = document.getElementById('pinInput').value.trim();
+            if (!pinVal) {
+                showToast("비밀번호를 입력해주세요.", "error");
+                return;
+            }
+            const hash = await sha256(pinVal);
+
+            if (isInitialPinMode || !appData.pinHash) {
+                appData.pinHash = hash;
+                saveData();
+                isAdminMode = true;
+                isAttendanceUnlocked = true;
+                closeModal();
+                renderAppModeUI();
+                renderAttendanceList();
+                showToast("관리자 비밀번호가 등록되었으며 관리자 모드로 전환되었습니다.", "check");
+            } else {
+                if (hash === appData.pinHash) {
+                    if (passwordPurpose === 'admin') {
+                        isAdminMode = true;
+                    }
+                    isAttendanceUnlocked = true;
+                    closeModal();
+                    renderAppModeUI();
+                    renderAttendanceList();
+                    if (currentActiveTab === 'attendance') switchTab('attendance');
+                    showToast("인증되었습니다.", "check");
+                } else {
+                    showToast("비밀번호가 올바르지 않습니다.", "error");
+                }
+            }
+        }
+
+        function toggleAdminMode() {
+            if (isAdminMode) {
+                isAdminMode = false;
+                renderAppModeUI();
+                renderItineraryList();
+                renderChecklist();
+                renderBudgetView();
+                renderAttendanceList();
+                showToast("사용자 모드로 전환되었습니다.");
+            } else {
+                passwordPurpose = 'admin';
+                const input = document.getElementById('pinInput');
+                if (input) input.value = '';
+                const title = document.getElementById('pinModalTitle');
+                const sub = document.getElementById('pinModalSub');
+                const btn = document.getElementById('pinModalBtn');
+
+                if (!appData.pinHash) {
+                    isInitialPinMode = true;
+                    if (title) title.textContent = "관리자 비밀번호 설정";
+                    if (sub) sub.textContent = "사용할 관리자 비밀번호를 등록하세요.";
+                    if (btn) btn.textContent = "비밀번호 설정 및 관리자 전환";
+                } else {
+                    isInitialPinMode = false;
+                    if (title) title.textContent = "관리자 인증";
+                    if (sub) sub.textContent = "관리자 비밀번호를 입력해주세요.";
+                    if (btn) btn.textContent = "관리자 전환";
+                }
+                openModal('modalPasswordPrompt');
+            }
+        }
+
+        function renderDayFilterList() {
+            const trip = getActiveTrip();
+            const container = document.getElementById('dayFilterList');
+            if (!container || !trip) return;
+            container.innerHTML = '';
+
+            let start = new Date(trip.startDate);
+            let end = new Date(trip.endDate);
+            let totalDays = 1;
+
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                let diffTime = Math.abs(end - start);
+                totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            }
+            if (totalDays < 1) totalDays = 1;
+
+            for (let i = 1; i <= totalDays; i++) {
+                const btn = document.createElement('button');
+                btn.onclick = () => { selectedDayFilter = i; renderDayFilterList(); renderItineraryList(); };
+                if (selectedDayFilter === i) {
+                    btn.className = "bg-indigo-600 text-white font-bold text-xs px-3.5 py-1.5 rounded-full shadow-xs shrink-0 transition";
+                } else {
+                    btn.className = "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 font-medium text-xs px-3.5 py-1.5 rounded-full shrink-0 transition";
+                }
+                btn.textContent = `${i}일차`;
+                container.appendChild(btn);
+            }
+        }
+
+        function renderManagerContact() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+
+            const nameEl = document.getElementById('managerNameDisplay');
+            const phoneEl = document.getElementById('managerPhoneDisplay');
+            const callBtn = document.getElementById('btnManagerCall');
+
+            if (nameEl) nameEl.textContent = trip.managerName || "담당자 미지정";
+            if (phoneEl) phoneEl.textContent = trip.managerPhone || "연락처 없음";
+            if (callBtn) callBtn.href = trip.managerPhone ? `tel:${trip.managerPhone}` : '#';
+        }
+
         function renderNotesView() {
             const trip = getActiveTrip();
             if (!trip) return;
@@ -8,6 +936,250 @@
 
             if (noticeEl) noticeEl.textContent = trip.noticeText || "등록된 유의사항이 없습니다.";
             if (journalEl) journalEl.value = trip.journal || "";
+        }
+
+        function renderItineraryList() {
+            const trip = getActiveTrip();
+            const container = document.getElementById('itineraryList');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!trip) return;
+
+            const dayItems = (trip.itineraries || [])
+                .filter(item => item.dayIndex === selectedDayFilter)
+                .sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+            if (dayItems.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200 text-xs">
+                        등록된 일정이 없습니다. ${isAdminMode ? "'+ 일정 추가'를 눌러 등록해보세요." : ""}
+                    </div>`;
+                return;
+            }
+
+            dayItems.forEach(item => {
+                const mapSearchUrl = item.location ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.location)}` : '#';
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl p-3.5 border border-slate-200/90 shadow-xs space-y-2 transition hover:border-indigo-200';
+                
+                let photosHtml = '';
+                if (item.photos && item.photos.length > 0) {
+                    photosHtml = `<div class="flex items-center space-x-2 overflow-x-auto pt-1 no-scrollbar">`;
+                    item.photos.forEach((p, idx) => {
+                        const canDelete = isAdminMode || !p.isAdminUploaded;
+                        photosHtml += `
+                            <div class="relative group shrink-0 w-16 h-16 rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+                                <img src="${p.url}" onclick="openImageViewer('${p.url}')" class="w-full h-full object-cover cursor-pointer hover:opacity-90">
+                                ${canDelete ? `
+                                <button onclick="deleteItineraryImage('${item.id}', ${idx})" class="absolute top-0.5 right-0.5 bg-rose-600 text-white rounded-full w-4 h-4 text-[9px] flex items-center justify-center shadow-xs">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>` : ''}
+                            </div>
+                        `;
+                    });
+                    photosHtml += `</div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-md text-[11px] font-mono">${item.time || '00:00'}</span>
+                            <h3 class="font-bold text-slate-800 text-sm">${linkify(item.title)}</h3>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <label class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-lg cursor-pointer transition flex items-center space-x-1">
+                                <i class="fa-solid fa-camera text-[10px]"></i>
+                                <span>사진</span>
+                                <input type="file" accept="image/*" onchange="uploadItineraryImage(event, '${item.id}')" class="hidden">
+                            </label>
+                            ${isAdminMode ? `
+                            <button onclick="editItineraryItem('${item.id}')" class="text-slate-400 hover:text-indigo-600 text-xs p-1"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteItineraryItem('${item.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ${item.location ? `
+                        <div class="text-xs text-slate-500 flex items-center">
+                            <i class="fa-solid fa-location-dot text-rose-500 mr-1.5 text-[11px]"></i>
+                            <span>${item.location}</span>
+                            <a href="${mapSearchUrl}" target="_blank" class="ml-2 text-indigo-600 hover:underline text-[11px] font-medium flex items-center">
+                                <i class="fa-solid fa-map-location-dot mr-0.5"></i>지도보기
+                            </a>
+                        </div>` : ''
+                    }
+                    ${item.memo ? `<p class="text-xs text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-100 leading-relaxed whitespace-pre-line">${linkify(item.memo)}</p>` : ''}
+                    ${photosHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        async function uploadItineraryImage(event, itinId) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showToast("이미지 등록 중...", "info");
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const base64 = e.target.result;
+                const trip = getActiveTrip();
+                const item = trip.itineraries.find(i => i.id === itinId);
+                if (!item) return;
+                if (!item.photos) item.photos = [];
+
+                let uploadedUrl = base64;
+                const sheetsUrl = appData.googleSheetsUrl || DEFAULT_SHEETS_URL;
+
+                if (sheetsUrl) {
+                    try {
+                        const resp = await fetch(sheetsUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain' },
+                            body: JSON.stringify({
+                                action: 'uploadImage',
+                                base64Data: base64,
+                                fileName: `trip_${Date.now()}.jpg`,
+                                mimeType: file.type || 'image/jpeg'
+                            })
+                        });
+                        const resJson = await resp.json();
+                        if (resJson && resJson.status === 'ok' && resJson.url) {
+                            uploadedUrl = resJson.url;
+                        }
+                    } catch (err) {
+                        console.warn("Drive upload fallback to local base64:", err);
+                    }
+                }
+
+                item.photos.push({
+                    url: uploadedUrl,
+                    isAdminUploaded: isAdminMode
+                });
+
+                saveData();
+                renderItineraryList();
+                showToast("사진이 추가되었습니다.", "check");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function deleteItineraryImage(itinId, photoIndex) {
+            const trip = getActiveTrip();
+            const item = trip.itineraries.find(i => i.id === itinId);
+            if (!item || !item.photos || !item.photos[photoIndex]) return;
+
+            const photo = item.photos[photoIndex];
+            if (photo.isAdminUploaded && !isAdminMode) {
+                showToast("관리자가 등록한 사진은 관리자만 삭제할 수 있습니다.", "error");
+                return;
+            }
+
+            showConfirmModal("해당 사진을 삭제하시겠습니까?", () => {
+                item.photos.splice(photoIndex, 1);
+                saveData();
+                renderItineraryList();
+                showToast("사진이 삭제되었습니다.", "check");
+            });
+        }
+
+        function openImageViewer(url) {
+            const img = document.getElementById('imageViewerImg');
+            if (img) img.src = url;
+            openModal('modalImageViewer');
+        }
+
+        function openAddItineraryModal() {
+            document.getElementById('editItineraryId').value = '';
+            document.getElementById('itineraryModalTitle').textContent = "일정 추가";
+            document.getElementById('itinTime').value = "09:00";
+            document.getElementById('itinTitle').value = "";
+            document.getElementById('itinLocation').value = "";
+            document.getElementById('itinMemo').value = "";
+
+            const select = document.getElementById('itinDaySelect');
+            select.innerHTML = '';
+            const trip = getActiveTrip();
+            let start = new Date(trip.startDate);
+            let end = new Date(trip.endDate);
+            let totalDays = 1;
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+                totalDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) + 1;
+            }
+            for (let i = 1; i <= totalDays; i++) {
+                const opt = document.createElement('option');
+                opt.value = i;
+                opt.textContent = `${i}일차`;
+                if (i === selectedDayFilter) opt.selected = true;
+                select.appendChild(opt);
+            }
+            openModal('modalItinerary');
+        }
+
+        function editItineraryItem(id) {
+            const trip = getActiveTrip();
+            const item = trip.itineraries.find(i => i.id === id);
+            if (!item) return;
+
+            openAddItineraryModal();
+            document.getElementById('editItineraryId').value = item.id;
+            document.getElementById('itineraryModalTitle').textContent = "일정 수정";
+            document.getElementById('itinDaySelect').value = item.dayIndex;
+            document.getElementById('itinTime').value = item.time;
+            document.getElementById('itinTitle').value = item.title;
+            document.getElementById('itinLocation').value = item.location || '';
+            document.getElementById('itinMemo').value = item.memo || '';
+        }
+
+        function saveItineraryItem() {
+            const trip = getActiveTrip();
+            const id = document.getElementById('editItineraryId').value;
+            const dayIndex = parseInt(document.getElementById('itinDaySelect').value);
+            const time = document.getElementById('itinTime').value;
+            const title = document.getElementById('itinTitle').value.trim();
+            const location = document.getElementById('itinLocation').value.trim();
+            const memo = document.getElementById('itinMemo').value.trim();
+
+            if (!title) {
+                showToast("일정 내용을 입력해주세요.", "error");
+                return;
+            }
+
+            if (id) {
+                const item = trip.itineraries.find(i => i.id === id);
+                if (item) {
+                    item.dayIndex = dayIndex;
+                    item.time = time;
+                    item.title = title;
+                    item.location = location;
+                    item.memo = memo;
+                }
+            } else {
+                trip.itineraries.push({
+                    id: "itin_" + Date.now(),
+                    dayIndex,
+                    time,
+                    title,
+                    location,
+                    memo,
+                    photos: []
+                });
+            }
+
+            saveData();
+            closeModal();
+            renderItineraryList();
+            showToast("일정이 저장되었습니다.", "check");
+        }
+
+        function deleteItineraryItem(id) {
+            showConfirmModal("해당 일정을 삭제하시겠습니까?", () => {
+                const trip = getActiveTrip();
+                trip.itineraries = trip.itineraries.filter(i => i.id !== id);
+                saveData();
+                renderItineraryList();
+                showToast("일정이 삭제되었습니다.", "check");
+            });
         }
 
         function renderChecklist() {
@@ -39,6 +1211,44 @@
             });
         }
 
+        function openAddChecklistModal() {
+            document.getElementById('checklistInput').value = '';
+            openModal('modalChecklist');
+        }
+
+        function saveChecklistItem() {
+            const text = document.getElementById('checklistInput').value.trim();
+            if (!text) {
+                showToast("준비물 항목명을 입력해주세요.", "error");
+                return;
+            }
+            const trip = getActiveTrip();
+            if (!trip.checklist) trip.checklist = [];
+            trip.checklist.push({ id: "chk_" + Date.now(), text, checked: false });
+            saveData();
+            closeModal();
+            renderChecklist();
+            showToast("준비물 항목이 추가되었습니다.", "check");
+        }
+
+        function toggleChecklistItem(id) {
+            const trip = getActiveTrip();
+            const item = trip.checklist.find(c => c.id === id);
+            if (item) {
+                item.checked = !item.checked;
+                saveData();
+                renderChecklist();
+            }
+        }
+
+        function deleteChecklistItem(id) {
+            const trip = getActiveTrip();
+            trip.checklist = trip.checklist.filter(c => c.id !== id);
+            saveData();
+            renderChecklist();
+            showToast("준비물 항목이 삭제되었습니다.", "check");
+        }
+
         function renderBudgetView() {
             const trip = getActiveTrip();
             if (!trip) return;
@@ -61,9 +1271,9 @@
             if (percentEl) percentEl.textContent = spentPercent + '%';
             if (progressBar) {
                 progressBar.style.width = spentPercent + '%';
-                if (spentPercent > 90) progressBar.className = "bg-rose-500 h-2.5 rounded-full transition-all duration-300";
-                else if (spentPercent > 70) progressBar.className = "bg-amber-500 h-2.5 rounded-full transition-all duration-300";
-                else progressBar.className = "bg-indigo-600 h-2.5 rounded-full transition-all duration-300";
+                if (spentPercent > 90) progressBar.className = "bg-rose-500 h-1.5 rounded-full transition-all duration-300";
+                else if (spentPercent > 70) progressBar.className = "bg-amber-500 h-1.5 rounded-full transition-all duration-300";
+                else progressBar.className = "bg-emerald-400 h-1.5 rounded-full transition-all duration-300";
             }
 
             const categories = ['식비', '숙박', '교통', '관광/체험', '쇼핑', '기타'];
@@ -74,10 +1284,10 @@
                     const sum = expenses.filter(e => e.category === cat).reduce((acc, cur) => acc + (cur.amount || 0), 0);
                     if (sum > 0 || isAdminMode) {
                         const chip = document.createElement('div');
-                        chip.className = "bg-slate-50 border border-slate-200 rounded-xl p-2.5 min-w-[100px] text-center shrink-0 space-y-1";
+                        chip.className = "bg-slate-50 border border-slate-200 rounded-xl p-2.5 min-w-[100px] text-center shrink-0 space-y-0.5";
                         chip.innerHTML = `
-                            <p class="text-[10px] text-slate-500 font-medium">${cat}</p>
-                            <p class="text-xs font-bold text-slate-800">${sum.toLocaleString()}원</p>
+                            <p class="text-[10px] text-slate-400 font-medium">${cat}</p>
+                            <p class="text-xs font-bold text-slate-800 font-mono">${sum.toLocaleString()}원</p>
                         `;
                         catContainer.appendChild(chip);
                     }
@@ -94,17 +1304,17 @@
 
                 expenses.slice().reverse().forEach(item => {
                     const card = document.createElement('div');
-                    card.className = "bg-white p-3 rounded-2xl border border-slate-200 flex items-center justify-between shadow-xs";
+                    card.className = "bg-white p-3 rounded-2xl border border-slate-200 flex items-center justify-between shadow-xs text-xs";
                     card.innerHTML = `
                         <div class="space-y-0.5">
                             <div class="flex items-center space-x-1.5">
                                 <span class="bg-indigo-50 text-indigo-600 font-bold px-1.5 py-0.5 rounded text-[10px]">${item.category || '기타'}</span>
-                                <span class="font-bold text-xs text-slate-800">${item.title}</span>
+                                <span class="font-bold text-slate-800">${item.title}</span>
                             </div>
                             <p class="text-[10px] text-slate-400 font-mono">${item.date || ''}</p>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <span class="font-bold text-xs text-rose-600">-${(item.amount || 0).toLocaleString()}원</span>
+                            <span class="font-bold text-rose-600 font-mono">-${(item.amount || 0).toLocaleString()}원</span>
                             ${isAdminMode ? `
                             <button onclick="deleteExpenseItem('${item.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1">
                                 <i class="fa-solid fa-trash"></i>
@@ -116,58 +1326,145 @@
             }
         }
 
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
-            if (!toast) return;
-            toast.textContent = message;
-            toast.className = `fixed bottom-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-lg transition duration-300 ${
-                type === 'error' ? 'bg-rose-600' : type === 'check' ? 'bg-emerald-600' : 'bg-slate-800'
-            }`;
-            toast.classList.remove('hidden');
-            setTimeout(() => toast.classList.add('hidden'), 2500);
+        function openSetBudgetModal() {
+            const trip = getActiveTrip();
+            document.getElementById('totalBudgetInput').value = trip.totalBudget || 0;
+            openModal('modalSetBudget');
         }
 
-        function openModal(id) {
-            const modal = document.getElementById(id);
-            if (modal) modal.classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.add('hidden'));
-        }
-
-        function showConfirmModal(message, callback) {
-            const msgEl = document.getElementById('confirmModalMsg');
-            if (msgEl) msgEl.textContent = message;
-            pendingConfirmCallback = callback;
-            openModal('modalConfirm');
-        }
-
-        function executeConfirmCallback() {
-            if (typeof pendingConfirmCallback === 'function') {
-                pendingConfirmCallback();
-            }
-            pendingConfirmCallback = null;
+        function saveTotalBudget() {
+            const amount = parseInt(document.getElementById('totalBudgetInput').value) || 0;
+            const trip = getActiveTrip();
+            trip.totalBudget = amount;
+            saveData();
             closeModal();
+            renderBudgetView();
+            showToast("총 예산이 수정되었습니다.", "check");
         }
 
-        function generateQrCode() {
-            const container = document.getElementById('qrCodeContainer');
-            if (!container) return;
+        function openAddExpenseModal() {
+            document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('expTitle').value = '';
+            document.getElementById('expAmount').value = '';
+            openModal('modalExpense');
+        }
+
+        function saveExpenseItem() {
+            const date = document.getElementById('expDate').value;
+            const category = document.getElementById('expCategory').value;
+            const title = document.getElementById('expTitle').value.trim();
+            const amount = parseInt(document.getElementById('expAmount').value) || 0;
+
+            if (!title || amount <= 0) {
+                showToast("올바른 지출명과 금액을 입력해주세요.", "error");
+                return;
+            }
+
+            const trip = getActiveTrip();
+            if (!trip.expenses) trip.expenses = [];
+            trip.expenses.push({ id: "exp_" + Date.now(), date, category, title, amount });
+            saveData();
+            closeModal();
+            renderBudgetView();
+            showToast("지출 내역이 추가되었습니다.", "check");
+        }
+
+        function deleteExpenseItem(id) {
+            showConfirmModal("지출 내역을 삭제하시겠습니까?", () => {
+                const trip = getActiveTrip();
+                trip.expenses = trip.expenses.filter(e => e.id !== id);
+                saveData();
+                renderBudgetView();
+                showToast("지출 내역이 삭제되었습니다.", "check");
+            });
+        }
+
+        function renderAttendanceList() {
+            const trip = getActiveTrip();
+            const container = document.getElementById('attendanceStudentList');
+            if (!container || !trip) return;
             container.innerHTML = '';
-            const appUrl = window.location.href.split('#')[0];
-            const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(appUrl)}`;
-            container.innerHTML = `<img src="${qrImgUrl}" alt="App QR Code" class="mx-auto rounded-xl shadow-xs border border-slate-100">`;
+
+            const searchKey = (document.getElementById('attendanceSearchInput')?.value || '').trim().toLowerCase();
+            let students = trip.students || [];
+
+            let totalCount = students.length;
+            let absentCount = students.filter(s => s.isAbsent).length;
+            let targetStudents = students;
+
+            if (attendanceCheckMode === 'mid') {
+                targetStudents = students.filter(s => !s.isAbsent);
+            }
+
+            let checkedCount = targetStudents.filter(s => attendanceCheckMode === 'main' ? s.checked : s.midChecked).length;
+
+            const checkedEl = document.getElementById('attendanceCheckedCount');
+            const totalEl = document.getElementById('attendanceTotalCount');
+            const absentBadgeEl = document.getElementById('attendanceAbsentBadge');
+            const statusTitle = document.getElementById('attendanceStatusTitle');
+
+            if (checkedEl) checkedEl.textContent = checkedCount;
+            if (totalEl) totalEl.textContent = targetStudents.length;
+            if (absentBadgeEl) absentBadgeEl.textContent = `(미참석 ${absentCount}명)`;
+            if (statusTitle) statusTitle.textContent = attendanceCheckMode === 'main' ? '현재 출석 현황:' : '중간 점검 현황 (불참 제외):';
+
+            let filtered = students.filter(s => {
+                let matchSearch = !searchKey || s.num.includes(searchKey) || s.name.includes(searchKey);
+                let isUnchecked = attendanceCheckMode === 'main' ? !s.checked : !s.midChecked;
+                let matchFilter = !showOnlyUncheckedStudents || isUnchecked;
+                return matchSearch && matchFilter;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200 text-xs">해당 조건의 학생이 없습니다.</div>`;
+                return;
+            }
+
+            filtered.forEach(s => {
+                const isChecked = attendanceCheckMode === 'main' ? s.checked : s.midChecked;
+                const card = document.createElement('div');
+                card.className = `bg-white p-3 rounded-2xl border ${s.isAbsent ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200'} shadow-xs space-y-2 text-xs`;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" ${isChecked ? 'checked' : ''} ${s.isAbsent && attendanceCheckMode === 'mid' ? 'disabled' : ''} onchange="toggleStudentCheck('${s.id}')" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                <span class="font-bold text-slate-800 font-mono text-sm">${s.num}</span>
+                                <span class="font-bold text-slate-800 text-sm">${s.name}</span>
+                            </label>
+                            ${s.isAbsent ? `<span class="bg-rose-100 text-rose-700 font-bold px-1.5 py-0.5 rounded text-[10px]">미참석</span>` : ''}
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            ${isAdminMode ? `
+                            <button onclick="toggleStudentAbsent('${s.id}')" class="text-[10px] ${s.isAbsent ? 'bg-slate-200 text-slate-700' : 'bg-rose-100 text-rose-700'} px-2 py-1 rounded-lg font-bold">
+                                ${s.isAbsent ? '참석으로' : '미참석'}
+                            </button>
+                            <button onclick="editStudentItem('${s.id}')" class="text-slate-400 hover:text-indigo-600 text-xs p-1"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteStudentItem('${s.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 pt-1 text-[11px] border-t border-slate-100">
+                        ${s.phone ? `<a href="tel:${s.phone}" class="bg-slate-50 text-slate-700 p-1.5 rounded-lg text-center font-mono truncate hover:bg-indigo-50"><i class="fa-solid fa-mobile mr-1 text-indigo-500"></i>본인</a>` : `<span class="text-slate-300 text-center py-1.5">본인 없음</span>`}
+                        ${s.momPhone ? `<a href="tel:${s.momPhone}" class="bg-slate-50 text-slate-700 p-1.5 rounded-lg text-center font-mono truncate hover:bg-indigo-50"><i class="fa-solid fa-user-nurse mr-1 text-rose-500"></i>엄마</a>` : `<span class="text-slate-300 text-center py-1.5">엄마 없음</span>`}
+                        ${s.dadPhone ? `<a href="tel:${s.dadPhone}" class="bg-slate-50 text-slate-700 p-1.5 rounded-lg text-center font-mono truncate hover:bg-indigo-50"><i class="fa-solid fa-user-tie mr-1 text-blue-500"></i>아빠</a>` : `<span class="text-slate-300 text-center py-1.5">아빠 없음</span>`}
+                    </div>
+                    ${s.notes ? `<p class="text-[11px] text-amber-700 bg-amber-50/80 p-1.5 rounded-lg border border-amber-100"><i class="fa-solid fa-circle-info mr-1"></i>${s.notes}</p>` : ''}
+                `;
+                container.appendChild(card);
+            });
         }
 
-        function setAttendanceMode(mode) {
-            attendanceCheckMode = mode;
-            renderAttendanceList();
-        }
-
-        function setStudentFilter(showUnchecked) {
-            showOnlyUncheckedStudents = showUnchecked;
-            renderAttendanceList();
+        function toggleStudentCheck(id) {
+            const trip = getActiveTrip();
+            const s = trip.students.find(std => std.id === id);
+            if (s) {
+                if (attendanceCheckMode === 'main') s.checked = !s.checked;
+                else s.midChecked = !s.midChecked;
+                saveData();
+                renderAttendanceList();
+            }
         }
 
         function toggleStudentAbsent(id) {
@@ -178,6 +1475,31 @@
                 saveData();
                 renderAttendanceList();
             }
+        }
+
+        function setAttendanceMode(mode) {
+            attendanceCheckMode = mode;
+            const btnMain = document.getElementById('btnCheckModeMain');
+            const btnMid = document.getElementById('btnCheckModeMid');
+            if (mode === 'main') {
+                if (btnMain) btnMain.className = "px-3 py-1.5 rounded-lg bg-indigo-600 text-white shadow-xs transition";
+                if (btnMid) btnMid.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-200 transition";
+            } else {
+                if (btnMain) btnMain.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-200 transition";
+                if (btnMid) btnMid.className = "px-3 py-1.5 rounded-lg bg-indigo-600 text-white shadow-xs transition";
+            }
+            renderAttendanceList();
+        }
+
+        function setStudentFilter(showUnchecked) {
+            showOnlyUncheckedStudents = showUnchecked;
+            const btn = document.getElementById('btnFilterUnchecked');
+            if (btn) {
+                btn.className = showUnchecked 
+                    ? "text-[10px] px-2 py-1 rounded-md font-bold transition border border-indigo-300 bg-indigo-50 text-indigo-700" 
+                    : "text-[10px] px-2 py-1 rounded-md font-bold transition border border-slate-200 bg-slate-50 text-slate-600";
+            }
+            renderAttendanceList();
         }
 
         function resetMainCheckState() {
@@ -202,6 +1524,126 @@
             saveData();
             renderAttendanceList();
             showToast("전원 출석 처리되었습니다.", "check");
+        }
+
+        function openAddStudentModal() {
+            document.getElementById('editStudentId').value = '';
+            document.getElementById('stdNum').value = '';
+            document.getElementById('stdName').value = '';
+            document.getElementById('stdPhone').value = '';
+            document.getElementById('stdMomPhone').value = '';
+            document.getElementById('stdDadPhone').value = '';
+            document.getElementById('stdNotes').value = '';
+            openModal('modalStudent');
+        }
+
+        function editStudentItem(id) {
+            const trip = getActiveTrip();
+            const s = trip.students.find(std => std.id === id);
+            if (!s) return;
+
+            openAddStudentModal();
+            document.getElementById('editStudentId').value = s.id;
+            document.getElementById('stdNum').value = s.num;
+            document.getElementById('stdName').value = s.name;
+            document.getElementById('stdPhone').value = s.phone || '';
+            document.getElementById('stdMomPhone').value = s.momPhone || '';
+            document.getElementById('stdDadPhone').value = s.dadPhone || '';
+            document.getElementById('stdNotes').value = s.notes || '';
+        }
+
+        function saveStudentItem() {
+            const num = document.getElementById('stdNum').value.trim();
+            const name = document.getElementById('stdName').value.trim();
+            const phone = document.getElementById('stdPhone').value.trim();
+            const momPhone = document.getElementById('stdMomPhone').value.trim();
+            const dadPhone = document.getElementById('stdDadPhone').value.trim();
+            const notes = document.getElementById('stdNotes').value.trim();
+
+            if (!num || !name) {
+                showToast("학번과 이름을 입력해주세요.", "error");
+                return;
+            }
+
+            const trip = getActiveTrip();
+            const id = document.getElementById('editStudentId').value;
+
+            if (id) {
+                const s = trip.students.find(std => std.id === id);
+                if (s) {
+                    s.num = num;
+                    s.name = name;
+                    s.phone = phone;
+                    s.momPhone = momPhone;
+                    s.dadPhone = dadPhone;
+                    s.notes = notes;
+                }
+            } else {
+                trip.students.push({
+                    id: "std_" + Date.now(),
+                    num,
+                    name,
+                    phone,
+                    momPhone,
+                    dadPhone,
+                    notes,
+                    checked: false,
+                    isAbsent: false,
+                    midChecked: false
+                });
+            }
+
+            saveData();
+            closeModal();
+            renderAttendanceList();
+            showToast("학생 정보가 저장되었습니다.", "check");
+        }
+
+        function deleteStudentItem(id) {
+            showConfirmModal("학생을 명단에서 삭제하시겠습니까?", () => {
+                const trip = getActiveTrip();
+                trip.students = trip.students.filter(s => s.id !== id);
+                saveData();
+                renderAttendanceList();
+                showToast("학생이 삭제되었습니다.", "check");
+            });
+        }
+
+        function processExcelImport() {
+            const text = document.getElementById('excelPasteArea').value.trim();
+            if (!text) {
+                showToast("엑셀 데이터를 입력해주세요.", "error");
+                return;
+            }
+
+            const rows = text.split('\n');
+            const trip = getActiveTrip();
+            if (!trip.students) trip.students = [];
+
+            let importedCount = 0;
+            rows.forEach(row => {
+                const cols = row.split('\t').map(c => c.trim());
+                if (cols.length >= 2 && cols[0] && cols[1]) {
+                    trip.students.push({
+                        id: "std_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+                        num: cols[0],
+                        name: cols[1],
+                        phone: cols[2] || '',
+                        momPhone: cols[3] || '',
+                        dadPhone: cols[4] || '',
+                        notes: cols[5] || '',
+                        checked: false,
+                        isAbsent: false,
+                        midChecked: false
+                    });
+                    importedCount++;
+                }
+            });
+
+            saveData();
+            closeModal();
+            renderAttendanceList();
+            showToast(`${importedCount}명의 학생 명단이 등록되었습니다.`, "check");
         }
 
         async function syncFromSheets() {
@@ -232,13 +1674,13 @@
 
                     saveData();
                     initApp();
-                    showToast("최신 일정을 성공적으로 불러왔습니다.", "check");
+                    showToast("최신 일정을 불러왔습니다.", "check");
                 } else {
-                    showToast("구글 시트에서 데이터를 가져오지 못했습니다.", "error");
+                    showToast("구글 시트 데이터를 불러오지 못했습니다.", "error");
                 }
             } catch (err) {
                 console.error(err);
-                showToast("동기화 중 오류가 발생했습니다.", "error");
+                showToast("동기화 오류가 발생했습니다.", "error");
             }
         }
 
@@ -249,7 +1691,7 @@
             }
             const sheetsUrl = appData.googleSheetsUrl || DEFAULT_SHEETS_URL;
             if (!sheetsUrl) {
-                showToast("구글 시트 URL을 설정해주세요.", "error");
+                showToast("구글 시트 URL을 입력해주세요.", "error");
                 return;
             }
             showToast("구글 시트에 저장 중...", "info");
@@ -271,12 +1713,284 @@
             }
         }
 
-        function renderItineraryList() {
-<!-- ... existing code ... -->
-```eof
+        function generateQrCode() {
+            const container = document.getElementById('qrCodeContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            const appUrl = window.location.href.split('#')[0];
+            const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(appUrl)}`;
+            container.innerHTML = `<img src="${qrImgUrl}" alt="App QR Code" class="mx-auto rounded-xl shadow-xs border border-slate-100">`;
+        }
 
-### Fix Details
-1. **Added `renderChecklist()`**: Dynamically renders preparation checklists and supports checking items and deletion (for admins).
-2. **Added `renderBudgetView()`**: Updates budget overview, spent progress bar, category breakdowns (with horizontal scroll), and itemized expense list.
-3. **Added Modal & Toast Utility Functions**: Added `showToast()`, `openModal()`, `closeModal()`, `showConfirmModal()`, and `executeConfirmCallback()`.
-4. **Added Sync & Attendance Control Functions**: Added `generateQrCode()`, `setAttendanceMode()`, `setStudentFilter()`, `resetMainCheckState()`, `markAllMainCheck()`, `syncFromSheets()`, and `syncToSheets()`.
+        function copyAppUrl() {
+            const appUrl = window.location.href.split('#')[0];
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(appUrl);
+            } else {
+                const input = document.createElement('input');
+                input.value = appUrl;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+            }
+            showToast("공유 URL이 클립보드에 복사되었습니다.", "check");
+        }
+
+        function exportJsonData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `trip_manager_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast("백업 파일이 다운로드되었습니다.", "check");
+        }
+
+        function importJsonData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (parsed && parsed.trips) {
+                        appData = parsed;
+                        saveData();
+                        initApp();
+                        showToast("복원이 완료되었습니다.", "check");
+                    } else {
+                        showToast("올바른 백업 파일 형식이 아닙니다.", "error");
+                    }
+                } catch (err) {
+                    showToast("JSON 파일 읽기 오류가 발생했습니다.", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function openEditNoticeModal() {
+            const trip = getActiveTrip();
+            document.getElementById('noticeInputArea').value = trip.noticeText || '';
+            openModal('modalNotice');
+        }
+
+        function saveNoticeText() {
+            const text = document.getElementById('noticeInputArea').value.trim();
+            const trip = getActiveTrip();
+            trip.noticeText = text;
+            saveData();
+            closeModal();
+            renderNotesView();
+            showToast("유의사항이 저장되었습니다.", "check");
+        }
+
+        function saveTravelJournal() {
+            const text = document.getElementById('travelJournalInput').value;
+            const trip = getActiveTrip();
+            trip.journal = text;
+            saveData();
+            showToast("여행 후기가 저장되었습니다.", "check");
+        }
+
+        function openEditManagerModal() {
+            const trip = getActiveTrip();
+            document.getElementById('managerNameInput').value = trip.managerName || '';
+            document.getElementById('managerPhoneInput').value = trip.managerPhone || '';
+            openModal('modalEditManager');
+        }
+
+        function saveManagerContact() {
+            const name = document.getElementById('managerNameInput').value.trim();
+            const phone = document.getElementById('managerPhoneInput').value.trim();
+            const trip = getActiveTrip();
+
+            trip.managerName = name || "담당자 미지정";
+            trip.managerPhone = phone;
+            saveData();
+            closeModal();
+            renderManagerContact();
+            showToast("담당자 정보가 수정되었습니다.", "check");
+        }
+
+        function openTripSelectModal() {
+            renderTripList();
+            openModal('modalTripSelect');
+        }
+
+        function renderTripList() {
+            const container = document.getElementById('tripListContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            appData.trips.forEach(t => {
+                const isActive = t.id === appData.activeTripId;
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border flex items-center justify-between transition ${isActive ? 'bg-indigo-50 border-indigo-300' : 'bg-white border-slate-200'}`;
+                div.innerHTML = `
+                    <div class="cursor-pointer flex-1" onclick="selectTrip('${t.id}')">
+                        <p class="font-bold text-xs text-slate-800">${t.title}</p>
+                        <p class="text-[10px] text-slate-400 font-mono">${t.startDate} ~ ${t.endDate}</p>
+                    </div>
+                    ${isAdminMode && appData.trips.length > 1 ? `
+                    <button onclick="deleteTrip('${t.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>` : ''}
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function selectTrip(id) {
+            appData.activeTripId = id;
+            selectedDayFilter = 1;
+            saveData();
+            closeModal();
+            initApp();
+            showToast("일정이 변경되었습니다.", "check");
+        }
+
+        function openNewTripForm() {
+            document.getElementById('newTripTitle').value = '';
+            document.getElementById('newTripStartDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('newTripEndDate').value = new Date().toISOString().split('T')[0];
+            openModal('modalNewTrip');
+        }
+
+        function createNewTrip() {
+            const title = document.getElementById('newTripTitle').value.trim();
+            const startDate = document.getElementById('newTripStartDate').value;
+            const endDate = document.getElementById('newTripEndDate').value;
+
+            if (!title || !startDate || !endDate) {
+                showToast("모든 항목을 입력해주세요.", "error");
+                return;
+            }
+
+            const newId = "trip_" + Date.now();
+            appData.trips.push({
+                id: newId,
+                title,
+                startDate,
+                endDate,
+                totalBudget: 1000000,
+                managerName: "담당자 미지정",
+                managerPhone: "",
+                noticeText: "안전 유의사항을 입력하세요.",
+                journal: "",
+                itineraries: [],
+                checklist: [],
+                expenses: [],
+                students: []
+            });
+
+            appData.activeTripId = newId;
+            selectedDayFilter = 1;
+            saveData();
+            closeModal();
+            initApp();
+            showToast("새 일정이 생성되었습니다.", "check");
+        }
+
+        function deleteTrip(id) {
+            if (appData.trips.length <= 1) {
+                showToast("최소 하나의 여행 일정은 유지되어야 합니다.", "error");
+                return;
+            }
+            showConfirmModal("해당 일정을 완전히 삭제하시겠습니까?", () => {
+                appData.trips = appData.trips.filter(t => t.id !== id);
+                if (appData.activeTripId === id) {
+                    appData.activeTripId = appData.trips[0].id;
+                }
+                saveData();
+                renderTripList();
+                initApp();
+                showToast("일정이 삭제되었습니다.", "check");
+            });
+        }
+
+        function switchTab(tabName) {
+            currentActiveTab = tabName;
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.className = "flex flex-col items-center justify-center flex-1 h-full text-slate-400 hover:text-indigo-600 transition";
+            });
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if (activeBtn) {
+                activeBtn.className = "flex flex-col items-center justify-center flex-1 h-full text-indigo-600 font-bold transition";
+            }
+
+            if (tabName === 'attendance') {
+                if (isAdminMode || isAttendanceUnlocked) {
+                    document.getElementById('attendanceLockedView').classList.add('hidden');
+                    document.getElementById('attendanceUnlockedView').classList.remove('hidden');
+                    renderAttendanceList();
+                } else {
+                    document.getElementById('attendanceLockedView').classList.remove('hidden');
+                    document.getElementById('attendanceUnlockedView').classList.add('hidden');
+                }
+            } else if (tabName === 'settings') {
+                generateQrCode();
+            }
+        }
+
+        function initApp() {
+            if (!appData.googleSheetsUrl) {
+                appData.googleSheetsUrl = DEFAULT_SHEETS_URL;
+            }
+            const input = document.getElementById('googleSheetsUrlInput');
+            if (input) input.value = appData.googleSheetsUrl;
+
+            renderHeader();
+            renderAppModeUI();
+            renderDayFilterList();
+            renderManagerContact();
+            renderItineraryList();
+            renderChecklist();
+            renderBudgetView();
+            renderNotesView();
+        }
+
+        function registerDynamicPWA() {
+            try {
+                const manifestObj = {
+                    name: "스마트 트립 매니저",
+                    short_name: "트립매니저",
+                    start_url: "./",
+                    display: "standalone",
+                    background_color: "#4f46e5",
+                    theme_color: "#4f46e5",
+                    icons: [{ src: "https://cdn-icons-png.flaticon.com/512/201/201623.png", sizes: "192x192", type: "image/png" }]
+                };
+                const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/json' });
+                let manifestLink = document.querySelector('link[rel="manifest"]');
+                if (!manifestLink) {
+                    manifestLink = document.createElement('link');
+                    manifestLink.rel = 'manifest';
+                    document.head.appendChild(manifestLink);
+                }
+                manifestLink.href = URL.createObjectURL(manifestBlob);
+
+                if ('serviceWorker' in navigator) {
+                    const swCode = `
+                        self.addEventListener('install', (e) => self.skipWaiting());
+                        self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
+                        self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+                    `;
+                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                    navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+                }
+            } catch (err) { console.warn(err); }
+        }
+
+        window.onload = function() {
+            registerDynamicPWA();
+            initApp();
+        };
+    </script>
+</body>
+</html>
