@@ -494,8 +494,8 @@
                         <input type="text" id="itinLocation" placeholder="예: 제주특별자치도 서귀포시 성산읍 성산리 1" class="w-full border border-slate-200 rounded-lg p-2 outline-none">
                     </div>
                     <div>
-                        <label class="block text-slate-600 mb-1">상세 메모</label>
-                        <textarea id="itinMemo" rows="2" placeholder="준비물이나 주의사항 등..." class="w-full border border-slate-200 rounded-lg p-2 outline-none resize-none"></textarea>
+                        <label class="block text-slate-600 mb-1">상세 메모 (웹 URL 링크 입력 가능)</label>
+                        <textarea id="itinMemo" rows="2" placeholder="준비물, 웹사이트 링크(https://...), 주의사항 등..." class="w-full border border-slate-200 rounded-lg p-2 outline-none resize-none"></textarea>
                     </div>
                 </div>
                 <div class="flex space-x-2 pt-2">
@@ -782,6 +782,23 @@ function doPost(e) {
         const APP_VERSION = 'v1.1';
         const DEFAULT_SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwxUyMiOYjaX94eB6omoVX_fO4nzNIZOThbKHAkprJtN07i9Tmc6SyPK1r4-SuJCY4mHA/exec';
         
+        // Convert URLs inside plain text into clickable anchor links
+        function linkify(text) {
+            if (!text) return '';
+            const escaped = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            const urlRegex = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
+            return escaped.replace(urlRegex, function(url) {
+                let href = url;
+                if (!href.match(/^https?:\/\//i)) {
+                    href = 'http://' + href;
+                }
+                return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 underline hover:text-indigo-800 break-all font-medium"><i class="fa-solid fa-arrow-up-right-from-square text-[10px] mr-0.5"></i>${url}</a>`;
+            });
+        }
+
         // SHA-256 Simple Hash Function
         async function sha256(str) {
             const buffer = new TextEncoder().encode(str);
@@ -1132,7 +1149,7 @@ function doPost(e) {
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-2">
                             <span class="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-md text-[11px] font-mono">${item.time}</span>
-                            <h3 class="font-bold text-slate-800 text-sm">${item.title}</h3>
+                            <h3 class="font-bold text-slate-800 text-sm">${linkify(item.title)}</h3>
                         </div>
                         ${isAdminMode ? `
                         <div class="flex items-center space-x-1">
@@ -1149,7 +1166,7 @@ function doPost(e) {
                             </a>
                         </div>` : ''
                     }
-                    ${item.memo ? `<p class="text-xs text-slate-500 bg-slate-50 p-2 rounded-xl border border-slate-100">${item.memo}</p>` : ''}
+                    ${item.memo ? `<p class="text-xs text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-100 leading-relaxed whitespace-pre-line">${linkify(item.memo)}</p>` : ''}
                 `;
                 container.appendChild(card);
             });
