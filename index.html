@@ -129,6 +129,31 @@
                 <!-- Day Filter Selector -->
                 <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1" id="dayFilterList"></div>
 
+                <!-- Travel Manager Contact Card -->
+                <div id="managerContactCard" class="bg-gradient-to-r from-indigo-800 to-indigo-700 text-white rounded-2xl p-3 shadow-md flex items-center justify-between">
+                    <div class="flex items-center space-x-2.5 overflow-hidden">
+                        <div class="w-9 h-9 bg-white/15 rounded-xl flex items-center justify-center shrink-0 border border-white/20">
+                            <i class="fa-solid fa-user-tie text-yellow-300 text-base"></i>
+                        </div>
+                        <div class="leading-tight truncate">
+                            <div class="flex items-center space-x-1.5">
+                                <span class="text-[9px] bg-indigo-900/80 text-yellow-300 font-bold px-1.5 py-0.5 rounded border border-indigo-400/30">여행 담당자</span>
+                                <span class="font-bold text-xs truncate" id="managerNameDisplay">김선생님 (총괄)</span>
+                            </div>
+                            <p class="text-[11px] text-indigo-200 font-mono mt-0.5" id="managerPhoneDisplay">010-1234-5678</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-1.5 shrink-0">
+                        <a id="btnManagerCall" href="tel:010-1234-5678" class="bg-yellow-400 hover:bg-yellow-300 text-indigo-950 text-xs px-3 py-1.5 rounded-xl font-bold transition flex items-center space-x-1 shadow-xs">
+                            <i class="fa-solid fa-phone text-[11px]"></i>
+                            <span>전화 걸기</span>
+                        </a>
+                        <button onclick="checkAdminAction(openEditManagerModal)" class="admin-only bg-white/20 hover:bg-white/30 text-white text-xs p-1.5 rounded-xl transition" title="담당자 정보 수정">
+                            <i class="fa-solid fa-pen text-[11px]"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Itinerary Add Button & Header -->
                 <div class="flex items-center justify-between pt-1">
                     <h2 class="font-bold text-slate-800 flex items-center text-sm">
@@ -195,11 +220,13 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-4 gap-2 text-center text-xs" id="expenseCategoryStats"></div>
+                <!-- Scrollable Category Summary Chips -->
+                <div class="flex items-center space-x-2 overflow-x-auto no-scrollbar py-1" id="expenseCategoryStats"></div>
+                
                 <div id="expenseList" class="space-y-2.5"></div>
             </section>
 
-            <!-- TAB 3: 출석부 (비밀번호 보호) -->
+            <!-- TAB 3: 출석부 (비밀번호 보호 & 중간출석 지원) -->
             <section id="tab-attendance" class="p-4 space-y-4 hidden">
                 <div id="attendanceLockedView" class="flex flex-col items-center justify-center py-12 text-center space-y-4">
                     <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 text-2xl shadow-inner">
@@ -216,29 +243,60 @@
                 </div>
 
                 <div id="attendanceUnlockedView" class="space-y-4 hidden">
-                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                        <div>
-                            <span class="text-xs text-slate-500 font-medium">현재 출석 현황</span>
-                            <div class="flex items-baseline space-x-1">
-                                <span class="text-xl font-bold text-indigo-600" id="attendanceCheckedCount">0</span>
-                                <span class="text-xs text-slate-500">/ <span id="attendanceTotalCount">0</span> 명 출석</span>
+                    <!-- Check Mode Selector Tabs (기본 출석체크 / 중간 출석체크) -->
+                    <div class="bg-slate-200/80 p-1 rounded-2xl flex text-xs font-semibold">
+                        <button onclick="setAttendanceCheckMode('main')" id="btnAttendanceModeMain" class="flex-1 py-2 rounded-xl transition text-center shadow-xs bg-indigo-600 text-white">
+                            <i class="fa-solid fa-clipboard-user mr-1"></i>기본 출석체크
+                        </button>
+                        <button onclick="setAttendanceCheckMode('mid')" id="btnAttendanceModeMid" class="flex-1 py-2 rounded-xl transition text-center text-slate-600 hover:text-slate-900">
+                            <i class="fa-solid fa-stopwatch mr-1"></i>중간 출석체크
+                        </button>
+                    </div>
+
+                    <!-- Attendance Summary Card -->
+                    <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-slate-500 font-medium" id="attendanceStatusTitle">현재 기본 출석 현황</span>
+                                <div class="flex items-baseline space-x-1 mt-0.5">
+                                    <span class="text-xl font-bold text-indigo-600" id="attendanceCheckedCount">0</span>
+                                    <span class="text-xs text-slate-500">/ <span id="attendanceTotalCount">0</span> 명 점검</span>
+                                    <span class="text-[11px] text-rose-500 ml-2 font-medium" id="attendanceAbsentBadge">(미참석 0명)</span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-1.5">
+                                <button onclick="checkAdminAction(openExcelImportModal)" class="admin-only bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm">
+                                    <i class="fa-solid fa-file-excel"></i>
+                                    <span>엑셀 입력</span>
+                                </button>
+                                <button onclick="checkAdminAction(openAddStudentModal)" class="admin-only bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm">
+                                    <i class="fa-solid fa-user-plus"></i>
+                                    <span>학생 추가</span>
+                                </button>
                             </div>
                         </div>
-                        <div class="flex space-x-1.5">
-                            <button onclick="checkAdminAction(openExcelImportModal)" class="admin-only bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm">
-                                <i class="fa-solid fa-file-excel"></i>
-                                <span>엑셀 입력</span>
-                            </button>
-                            <button onclick="checkAdminAction(openAddStudentModal)" class="admin-only bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition shadow-sm">
-                                <i class="fa-solid fa-user-plus"></i>
-                                <span>학생 추가</span>
-                            </button>
+
+                        <!-- Mid Check Quick Controls (Visible only in 'mid' check mode for admin) -->
+                        <div id="midCheckControlBar" class="hidden pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span class="text-slate-500 text-[11px]"><i class="fa-solid fa-circle-info text-indigo-500 mr-1"></i>미참석자는 중간 점검 대상에서 <strong>자동 제외</strong>됩니다.</span>
+                            <div class="flex space-x-1 shrink-0 admin-only">
+                                <button onclick="resetMidCheckState()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] px-2 py-1 rounded-lg">초기화</button>
+                                <button onclick="markAllMidCheck()" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 text-[11px] px-2 py-1 rounded-lg font-bold">전원 점검</button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="relative">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                        <input type="text" id="attendanceSearchInput" oninput="renderAttendanceList()" placeholder="학번 또는 이름으로 검색..." class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <!-- Search & Unchecked Filter Bar -->
+                    <div class="flex items-center space-x-2">
+                        <div class="relative flex-1">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                            <input type="text" id="attendanceSearchInput" oninput="renderAttendanceList()" placeholder="학번 또는 이름으로 검색..." class="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <!-- Unchecked Students Filter Button -->
+                        <button onclick="toggleUncheckedStudentsFilter()" id="btnFilterUnchecked" class="bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 text-xs px-3 py-1.5 rounded-xl font-semibold transition shrink-0 flex items-center space-x-1">
+                            <i class="fa-solid fa-user-clock text-amber-500 text-[11px]"></i>
+                            <span>미출석자만</span>
+                        </button>
                     </div>
 
                     <div id="attendanceStudentList" class="space-y-2.5"></div>
@@ -288,7 +346,7 @@
                 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                     <div class="flex items-center justify-between">
                         <h2 class="font-bold text-slate-800 text-sm flex items-center">
-                            <i class="fa-solid fa-book-open text-indigo-600 mr-2"></i>여행 후기 및 메모
+                            <i class="fa-solid fa-book-open text-indigo-600 mr-2"></i>나의 여행 후기 및 메모
                         </h2>
                         <button onclick="saveTravelJournal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1 rounded-lg transition shadow-sm">
                             저장
@@ -765,6 +823,28 @@ function doPost(e) {
                 </div>
             </div>
 
+            <!-- Modal 14: Edit Travel Manager Contact Modal -->
+            <div id="modalEditManager" class="bg-white rounded-2xl w-full max-w-sm p-4 space-y-3 shadow-2xl hidden">
+                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                    <h3 class="font-bold text-slate-800 text-sm">여행 담당자 연락처 수정</h3>
+                    <button onclick="closeModal()" class="text-slate-400 text-lg hover:text-slate-600">&times;</button>
+                </div>
+                <div class="space-y-2.5 text-xs">
+                    <div>
+                        <label class="block text-slate-600 mb-1 font-medium">담당자 이름 / 역할</label>
+                        <input type="text" id="managerNameInput" placeholder="예: 김선생님 (총괄교사) / 인솔 가이드" class="w-full border border-slate-200 rounded-lg p-2 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-600 mb-1 font-medium">전화번호</label>
+                        <input type="tel" id="managerPhoneInput" placeholder="예: 010-1234-5678" class="w-full border border-slate-200 rounded-lg p-2 outline-none font-mono">
+                    </div>
+                </div>
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-600 text-xs py-2 rounded-xl">취소</button>
+                    <button onclick="saveManagerContact()" class="flex-1 bg-indigo-600 text-white text-xs py-2 rounded-xl font-medium">저장</button>
+                </div>
+            </div>
+
             <!-- Toast Notification Element -->
             <div id="toast" class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white text-xs px-4 py-2 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2">
                 <i class="fa-solid fa-circle-check text-emerald-400" id="toastIcon"></i>
@@ -820,6 +900,8 @@ function doPost(e) {
                     startDate: '2026-05-12',
                     endDate: '2026-05-14',
                     totalBudget: 1500000,
+                    managerName: '김선생님 (총괄 교사)',
+                    managerPhone: '010-1234-5678',
                     itineraries: [
                         { id: 'it_1', dayIndex: 1, time: '08:30', title: '김포공항 집결 및 수속', location: '김포국제공항', memo: '신분증/학생증 꼭 챙기기' },
                         { id: 'it_2', dayIndex: 1, time: '10:15', title: '제주공항 도착 및 이동', location: '제주국제공항', memo: '버스 1, 2호차 승차' },
@@ -834,11 +916,13 @@ function doPost(e) {
                     ],
                     expenses: [
                         { id: 'ex_1', date: '2026-05-12', category: '식비', title: '점심 식사 단체 결제', amount: 350000 },
-                        { id: 'ex_2', date: '2026-05-12', category: '숙박', title: '리조트 예약금', amount: 600000 }
+                        { id: 'ex_2', date: '2026-05-12', category: '숙박', title: '리조트 예약금', amount: 600000 },
+                        { id: 'ex_3', date: '2026-05-13', category: '관광/체험', title: '제주 잠수함 체험입장권', amount: 240000 }
                     ],
                     students: [
-                        { id: 'st_1', number: '10101', name: '강민준', phone: '010-1111-2222', momPhone: '010-3333-4444', dadPhone: '010-5555-6666', notes: '멀미 약간 있음', checked: true },
-                        { id: 'st_2', number: '10102', name: '김서연', phone: '010-2222-3333', momPhone: '010-4444-5555', dadPhone: '', notes: '견과류 알레르기', checked: false }
+                        { id: 'st_1', number: '10101', name: '강민준', phone: '010-1111-2222', momPhone: '010-3333-4444', dadPhone: '010-5555-6666', notes: '멀미 약간 있음', checked: true, isAbsent: false, midChecked: true },
+                        { id: 'st_2', number: '10102', name: '김서연', phone: '010-2222-3333', momPhone: '010-4444-5555', dadPhone: '', notes: '견과류 알레르기', checked: false, isAbsent: false, midChecked: false },
+                        { id: 'st_3', number: '10103', name: '박지훈', phone: '010-3333-5555', momPhone: '010-6666-7777', dadPhone: '010-8888-9999', notes: '병원 진료로 사유불참', checked: false, isAbsent: true, midChecked: false }
                     ],
                     notice: "1. 모임 시간 준수 (10분 전 사전 도착)\n2. 지정 구역 외 이탈 금지\n3. 야간 소음 자제 및 안전사고 주의",
                     journal: "첫째 날 제주공항에 무사히 도착해서 맛있는 점심을 먹었다. 날씨가 맑아서 성산일출봉 전경이 기대된다."
@@ -869,6 +953,8 @@ function doPost(e) {
         let isAttendanceUnlocked = false;
         let isAdminMode = false;
         let isInitialPinMode = false;
+        let showOnlyUncheckedStudents = false; // Filter state for attendance
+        let attendanceCheckMode = 'main'; // 'main' (기본 출석체크) or 'mid' (중간 출석체크)
         let passwordPurpose = 'admin'; // 'admin' or 'attendance'
         let pendingConfirmCallback = null;
 
@@ -1015,6 +1101,7 @@ function doPost(e) {
             }
 
             // Re-render sub views to refresh action icons
+            renderManagerContact();
             renderItineraryList();
             renderChecklist();
             renderBudgetView();
@@ -1123,6 +1210,50 @@ function doPost(e) {
             }
         }
 
+        function renderManagerContact() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+
+            const nameDisplay = document.getElementById('managerNameDisplay');
+            const phoneDisplay = document.getElementById('managerPhoneDisplay');
+            const callBtn = document.getElementById('btnManagerCall');
+
+            const name = trip.managerName || '여행 담당자 미등록';
+            const phone = trip.managerPhone || '';
+
+            if (nameDisplay) nameDisplay.textContent = name;
+            if (phoneDisplay) phoneDisplay.textContent = phone || '연락처 미입력';
+
+            if (callBtn) {
+                if (phone && phone.trim() !== '') {
+                    const cleanPhone = phone.replace(/[^0-9+]/g, '');
+                    callBtn.href = `tel:${cleanPhone}`;
+                    callBtn.classList.remove('hidden');
+                } else {
+                    callBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        function openEditManagerModal() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            document.getElementById('managerNameInput').value = trip.managerName || '';
+            document.getElementById('managerPhoneInput').value = trip.managerPhone || '';
+            openModal('modalEditManager');
+        }
+
+        function saveManagerContact() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            trip.managerName = document.getElementById('managerNameInput').value.trim();
+            trip.managerPhone = document.getElementById('managerPhoneInput').value.trim();
+            saveData();
+            renderManagerContact();
+            closeModal();
+            showToast("여행 담당자 연락처가 저장되었습니다.", "check");
+        }
+
         function renderItineraryList() {
             const trip = getActiveTrip();
             const container = document.getElementById('itineraryList');
@@ -1223,21 +1354,21 @@ function doPost(e) {
                 progressBar.className = 'bg-yellow-400 h-full transition-all duration-500 rounded-full';
             }
 
-            // Category breakdown
-            const categories = ['식비', '숙박', '교통', '기타'];
+            // Category breakdown horizontally scrollable with all categories
+            const categories = ['식비', '숙박', '교통', '쇼핑', '관광/체험', '기타'];
             const statsContainer = document.getElementById('expenseCategoryStats');
             statsContainer.innerHTML = '';
 
             categories.forEach(cat => {
                 const catSpent = expenses
-                    .filter(e => e.category === cat || (cat === '기타' && !['식비', '숙박', '교통'].includes(e.category)))
+                    .filter(e => e.category === cat)
                     .reduce((acc, c) => acc + (c.amount || 0), 0);
 
                 const card = document.createElement('div');
-                card.className = 'bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs';
+                card.className = 'min-w-[80px] bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs text-center shrink-0';
                 card.innerHTML = `
-                    <p class="text-[10px] text-slate-400">${cat}</p>
-                    <p class="font-bold text-slate-700 text-xs mt-0.5">₩${(catSpent / 10000).toFixed(1)}만</p>
+                    <p class="text-[10px] text-slate-400 truncate">${cat}</p>
+                    <p class="font-bold text-slate-700 text-xs mt-0.5">${catSpent >= 10000 ? `₩${(catSpent / 10000).toFixed(1)}만` : `₩${catSpent.toLocaleString()}`}</p>
                 `;
                 statsContainer.appendChild(card);
             });
@@ -1347,6 +1478,72 @@ function doPost(e) {
             showToast("출석부가 잠겼습니다.");
         }
 
+        function setAttendanceCheckMode(mode) {
+            attendanceCheckMode = mode;
+            const btnMain = document.getElementById('btnAttendanceModeMain');
+            const btnMid = document.getElementById('btnAttendanceModeMid');
+            const midBar = document.getElementById('midCheckControlBar');
+
+            if (mode === 'main') {
+                btnMain.className = "flex-1 py-2 rounded-xl transition text-center shadow-xs bg-indigo-600 text-white font-bold";
+                btnMid.className = "flex-1 py-2 rounded-xl transition text-center text-slate-600 hover:text-slate-900 font-semibold";
+                if (midBar) midBar.classList.add('hidden');
+            } else {
+                btnMid.className = "flex-1 py-2 rounded-xl transition text-center shadow-xs bg-indigo-600 text-white font-bold";
+                btnMain.className = "flex-1 py-2 rounded-xl transition text-center text-slate-600 hover:text-slate-900 font-semibold";
+                if (midBar) midBar.classList.remove('hidden');
+            }
+            renderAttendanceList();
+        }
+
+        function toggleUncheckedStudentsFilter() {
+            showOnlyUncheckedStudents = !showOnlyUncheckedStudents;
+            const btn = document.getElementById('btnFilterUnchecked');
+            if (btn) {
+                if (showOnlyUncheckedStudents) {
+                    btn.className = "bg-amber-500 text-white border border-amber-600 hover:bg-amber-600 text-xs px-3 py-1.5 rounded-xl font-semibold transition shrink-0 flex items-center space-x-1 shadow-xs";
+                } else {
+                    btn.className = "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 text-xs px-3 py-1.5 rounded-xl font-semibold transition shrink-0 flex items-center space-x-1";
+                }
+            }
+            renderAttendanceList();
+        }
+
+        function toggleStudentAbsent(id) {
+            const trip = getActiveTrip();
+            const std = trip.students.find(s => s.id === id);
+            if (std) {
+                std.isAbsent = !std.isAbsent;
+                if (std.isAbsent) {
+                    std.checked = false;
+                    std.midChecked = false;
+                }
+                saveData();
+                renderAttendanceList();
+                showToast(std.isAbsent ? `${std.name} 학생을 미참석자로 설정했습니다.` : `${std.name} 학생을 참석 가능 상태로 해제했습니다.`);
+            }
+        }
+
+        function resetMidCheckState() {
+            const trip = getActiveTrip();
+            if (!trip || !trip.students) return;
+            trip.students.forEach(s => s.midChecked = false);
+            saveData();
+            renderAttendanceList();
+            showToast("중간 출석 점검 현황이 리셋되었습니다.");
+        }
+
+        function markAllMidCheck() {
+            const trip = getActiveTrip();
+            if (!trip || !trip.students) return;
+            trip.students.forEach(s => {
+                if (!s.isAbsent) s.midChecked = true;
+            });
+            saveData();
+            renderAttendanceList();
+            showToast("참석 인원 전원 중간 출석 확인 완료!", "check");
+        }
+
         function renderAttendanceList() {
             if (!isAttendanceUnlocked) return;
             const trip = getActiveTrip();
@@ -1357,37 +1554,94 @@ function doPost(e) {
             if (!trip || !trip.students) return;
 
             const total = trip.students.length;
-            const checkedCount = trip.students.filter(s => s.checked).length;
-            document.getElementById('attendanceCheckedCount').textContent = checkedCount;
-            document.getElementById('attendanceTotalCount').textContent = total;
+            const absentCount = trip.students.filter(s => s.isAbsent).length;
 
-            const filtered = trip.students.filter(s => 
+            const statusTitleEl = document.getElementById('attendanceStatusTitle');
+            const checkedCountEl = document.getElementById('attendanceCheckedCount');
+            const totalCountEl = document.getElementById('attendanceTotalCount');
+            const absentBadgeEl = document.getElementById('attendanceAbsentBadge');
+
+            if (attendanceCheckMode === 'main') {
+                statusTitleEl.textContent = "현재 기본 출석 현황";
+                const checkedCount = trip.students.filter(s => s.checked).length;
+                checkedCountEl.textContent = checkedCount;
+                totalCountEl.textContent = total;
+                absentBadgeEl.textContent = `(미참석 ${absentCount}명)`;
+            } else {
+                statusTitleEl.textContent = "중간 출석 점검 현황 (미참석자 자동제외)";
+                const activeTargetCount = total - absentCount;
+                const midCheckedCount = trip.students.filter(s => !s.isAbsent && s.midChecked).length;
+                checkedCountEl.textContent = midCheckedCount;
+                totalCountEl.textContent = activeTargetCount;
+                absentBadgeEl.textContent = `(자동제외 ${absentCount}명)`;
+            }
+
+            let filtered = trip.students.filter(s => 
                 (s.number || '').toLowerCase().includes(search) || 
                 (s.name || '').toLowerCase().includes(search)
             );
 
+            // Filter unchecked students only
+            if (showOnlyUncheckedStudents) {
+                if (attendanceCheckMode === 'main') {
+                    filtered = filtered.filter(s => !s.checked && !s.isAbsent);
+                } else {
+                    filtered = filtered.filter(s => !s.midChecked && !s.isAbsent);
+                }
+            }
+
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200 text-xs">등록된 학생이 없습니다.</div>`;
+                container.innerHTML = `<div class="bg-white rounded-2xl p-6 text-center text-slate-400 border border-slate-200 text-xs">${showOnlyUncheckedStudents ? '미출석 학생이 없습니다. 🎉' : '등록된 학생이 없습니다.'}</div>`;
                 return;
             }
 
             filtered.forEach(std => {
+                const isMidMode = attendanceCheckMode === 'mid';
+                const isStudentAbsent = std.isAbsent === true;
+                
                 const card = document.createElement('div');
-                card.className = `bg-white rounded-2xl p-3.5 border shadow-sm transition space-y-2 ${std.checked ? 'border-emerald-300 bg-emerald-50/20' : 'border-slate-200'}`;
+                
+                let cardBgClass = 'border-slate-200 bg-white';
+                if (isStudentAbsent) {
+                    cardBgClass = 'border-rose-200 bg-rose-50/30 opacity-75';
+                } else if (isMidMode ? std.midChecked : std.checked) {
+                    cardBgClass = 'border-emerald-300 bg-emerald-50/20';
+                }
+
+                card.className = `bg-white rounded-2xl p-3.5 border shadow-sm transition space-y-2 ${cardBgClass}`;
+                
                 card.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-2">
-                            <input type="checkbox" ${std.checked ? 'checked' : ''} onchange="toggleStudentAttendance('${std.id}')" class="w-5 h-5 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                            ${isMidMode ? `
+                                ${isStudentAbsent ? `
+                                    <span class="w-5 h-5 bg-rose-100 text-rose-500 rounded-md flex items-center justify-center text-[10px] shrink-0 font-bold" title="미참석자 (중간점검 제외)"><i class="fa-solid fa-ban"></i></span>
+                                ` : `
+                                    <input type="checkbox" ${std.midChecked ? 'checked' : ''} onchange="toggleStudentAttendance('${std.id}', 'mid')" class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                                `}
+                            ` : `
+                                <input type="checkbox" ${std.checked ? 'checked' : ''} ${isStudentAbsent ? 'disabled' : ''} onchange="toggleStudentAttendance('${std.id}', 'main')" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                            `}
                             <div>
-                                <span class="text-xs text-slate-400 font-mono">${std.number}</span>
-                                <h4 class="font-bold text-slate-800 text-sm leading-tight">${std.name}</h4>
+                                <div class="flex items-center space-x-1.5">
+                                    <span class="text-xs text-slate-400 font-mono">${std.number}</span>
+                                    ${isStudentAbsent ? '<span class="bg-rose-500 text-white text-[9px] px-1.5 py-0.2 rounded font-bold">미참석자</span>' : ''}
+                                    ${isMidMode && std.midChecked && !isStudentAbsent ? '<span class="bg-indigo-100 text-indigo-700 text-[9px] px-1.5 py-0.2 rounded font-bold">중간체크 완료</span>' : ''}
+                                </div>
+                                <h4 class="font-bold ${isStudentAbsent ? 'text-rose-900 line-through' : 'text-slate-800'} text-sm leading-tight">${std.name}</h4>
                             </div>
                         </div>
-                        ${isAdminMode ? `
                         <div class="flex items-center space-x-1.5">
-                            <button onclick="editStudentItem('${std.id}')" class="text-slate-400 hover:text-slate-600 text-xs p-1"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteStudentItem('${std.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
-                        </div>` : ''}
+                            ${isAdminMode ? `
+                                <button onclick="toggleStudentAbsent('${std.id}')" class="text-[10px] ${isStudentAbsent ? 'bg-slate-200 text-slate-700' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'} font-bold px-2 py-1 rounded-lg transition">
+                                    ${isStudentAbsent ? '참석전환' : '미참석'}
+                                </button>
+                                <button onclick="editStudentItem('${std.id}')" class="text-slate-400 hover:text-slate-600 text-xs p-1"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="deleteStudentItem('${std.id}')" class="text-slate-300 hover:text-rose-500 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                            ` : `
+                                ${isStudentAbsent ? '<span class="text-[11px] text-rose-500 font-semibold">미참석 등록됨</span>' : ''}
+                            `}
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-3 gap-1.5 pt-1 text-[11px]">
@@ -1447,7 +1701,9 @@ function doPost(e) {
                         momPhone,
                         dadPhone,
                         notes,
-                        checked: false
+                        checked: false,
+                        isAbsent: false,
+                        midChecked: false
                     });
                     addedCount++;
                 }
@@ -1548,6 +1804,8 @@ function doPost(e) {
                 startDate,
                 endDate,
                 totalBudget: 1000000,
+                managerName: '김선생님 (담임교사)',
+                managerPhone: '010-0000-0000',
                 itineraries: [],
                 checklist: [],
                 expenses: [],
@@ -1813,7 +2071,9 @@ function doPost(e) {
                     momPhone,
                     dadPhone,
                     notes,
-                    checked: false
+                    checked: false,
+                    isAbsent: false,
+                    midChecked: false
                 });
             }
 
@@ -1823,11 +2083,16 @@ function doPost(e) {
             showToast("학생 정보가 저장되었습니다.", "check");
         }
 
-        function toggleStudentAttendance(id) {
+        function toggleStudentAttendance(id, mode = 'main') {
             const trip = getActiveTrip();
             const std = trip.students.find(s => s.id === id);
             if (std) {
-                std.checked = !std.checked;
+                if (mode === 'mid') {
+                    if (std.isAbsent) return; // Cannot mid check absent students
+                    std.midChecked = !std.midChecked;
+                } else {
+                    std.checked = !std.checked;
+                }
                 saveData();
                 renderAttendanceList();
             }
@@ -1962,7 +2227,7 @@ function doPost(e) {
         }
 
         /* ==========================================================================
-           GOOGLE SHEETS SYNC (APPS SCRIPT INTEGRATION)
+           GOOGLE SHEETS SYNC (APPS SCRIPT INTEGRATION & SMART DATA MERGE)
            ========================================================================== */
         function handleCloudSyncClick() {
             const hasSheetsUrl = appData.googleSheetsUrl && appData.googleSheetsUrl.trim() !== '';
@@ -2081,14 +2346,48 @@ function doPost(e) {
                 }
                 const imported = await response.json();
                 if (imported && imported.trips && Array.isArray(imported.trips)) {
-                    showConfirmModal("구글 시트에서 관리자가 수정한 최신 데이터를 불러와 앱 데이터를 교체하시겠습니까?", function() {
+                    showConfirmModal("구글 시트에서 최신 일정을 불러와 갱신하시겠습니까? (개인 체크리스트 및 후기는 보존됩니다)", function() {
                         const currentPin = appData.pinHash;
+                        
+                        // SMART DATA MERGE: Preserve personal checklist checks and personal journal notes
+                        imported.trips.forEach(impTrip => {
+                            const localTrip = appData.trips.find(t => t.id === impTrip.id);
+                            if (localTrip) {
+                                // Preserve user journal if already written locally
+                                if (localTrip.journal && localTrip.journal.trim() !== '') {
+                                    impTrip.journal = localTrip.journal;
+                                }
+
+                                // Preserve checklist checked states
+                                const checkStateMap = new Map((localTrip.checklist || []).map(c => [c.id, c.checked]));
+                                const checkTextStateMap = new Map((localTrip.checklist || []).map(c => [c.text, c.checked]));
+
+                                (impTrip.checklist || []).forEach(item => {
+                                    if (checkStateMap.has(item.id)) {
+                                        item.checked = checkStateMap.get(item.id);
+                                    } else if (checkTextStateMap.has(item.text)) {
+                                        item.checked = checkTextStateMap.get(item.text);
+                                    }
+                                });
+
+                                // Preserve student attendance flags if available
+                                const studentMap = new Map((localTrip.students || []).map(s => [s.id, s]));
+                                (impTrip.students || []).forEach(s => {
+                                    if (studentMap.has(s.id)) {
+                                        const localStd = studentMap.get(s.id);
+                                        s.isAbsent = localStd.isAbsent || false;
+                                        s.midChecked = localStd.midChecked || false;
+                                    }
+                                });
+                            }
+                        });
+
                         appData = imported;
                         if (!appData.pinHash && currentPin) appData.pinHash = currentPin;
                         if (!appData.googleSheetsUrl) appData.googleSheetsUrl = url;
                         saveData();
                         initApp();
-                        showToast("구글 시트에서 최신 데이터를 성공적으로 불러왔습니다.", "check");
+                        showToast("최신 데이터를 성공적으로 동기화하였습니다.", "check");
                     });
                 } else {
                     showToast("구글 시트에 유효한 여행 데이터가 없습니다.", "error");
@@ -2193,6 +2492,7 @@ function doPost(e) {
             renderHeader();
             renderAppModeUI();
             renderDayFilterList();
+            renderManagerContact();
             renderItineraryList();
             renderChecklist();
             renderBudgetView();
